@@ -16,3 +16,10 @@ Maintenance and UX update release.
 ## Package
 
 - Chrome Web Store package: `always-pinned-v0.1.1-webstore.zip`
+- SHA256: `4178615b7004428802b679be12dd9956494201deb5d2df0696845fe278027f5e`
+
+## Integrity check
+
+```powershell
+Get-FileHash .\always-pinned-v0.1.1-webstore.zip -Algorithm SHA256
+```
