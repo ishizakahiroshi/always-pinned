@@ -8,6 +8,54 @@ const tabListEl        = document.getElementById('tab-list');
 const statusEl         = document.getElementById('status');
 
 let currentWindowId;
+const locale = (navigator.language || 'en').toLowerCase().startsWith('ja') ? 'ja' : 'en';
+const enMessages = {
+  sectionCurrentWindow: 'This Window',
+  forcePinningCurrent: 'Pin This Window',
+  forcePinningDefault: 'Pin New Windows by Default',
+  defaultTag: 'Default',
+  windowOverrideTag: 'Override',
+  resetButton: '× Reset',
+  pinAll: '▶ Pin All',
+  unpinAll: '✕ Unpin All',
+  loading: 'Loading...',
+  sectionDefaultSettings: 'Default Settings',
+  excludeNewTabs: 'Exclude New Tabs',
+  respectManualUnpin: 'Respect Manual Unpin',
+  noteResetOnRestart: 'Window overrides and manual-unpin list are reset when the browser restarts.',
+  noTabs: 'No tabs',
+  loadingTitle: '(Loading)',
+  statusTabs: (count, pinned) => `Tabs: ${count} (Pinned: ${pinned})`
+};
+const jaOverrides = {
+    sectionCurrentWindow: 'このウィンドウ',
+    forcePinningCurrent: 'このウィンドウでピン留め',
+    forcePinningDefault: '新しいウィンドウで既定ON',
+    defaultTag: '既定値',
+    windowOverrideTag: '個別設定',
+    resetButton: '× リセット',
+    pinAll: '▶ 全ピン留め',
+    unpinAll: '✕ 全解除',
+    loading: '読み込み中...',
+    sectionDefaultSettings: '既定値設定',
+    excludeNewTabs: '新規タブを除外',
+    respectManualUnpin: '手動解除を尊重',
+    noteResetOnRestart: '※ ウィンドウ設定・手動解除リストはブラウザ再起動時にリセット',
+    noTabs: 'タブなし',
+    loadingTitle: '(読込中)',
+    statusTabs: (count, pinned) => `タブ: ${count}件 (ピン留め: ${pinned}件)`
+};
+const t = locale === 'ja' ? { ...enMessages, ...jaOverrides } : enMessages;
+
+function applyI18n() {
+  document.documentElement.lang = locale;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (t[key]) {
+      el.textContent = t[key];
+    }
+  });
+}
 
 async function getSettings() {
   return chrome.storage.local.get({
@@ -22,7 +70,7 @@ async function getSettings() {
 function buildTabList(tabs, manuallyUnpinned) {
   tabListEl.innerHTML = '';
   if (!tabs.length) {
-    tabListEl.innerHTML = '<div style="padding:8px;font-size:11px;color:#aaa;text-align:center">タブなし</div>';
+    tabListEl.innerHTML = `<div style="padding:8px;font-size:11px;color:#aaa;text-align:center">${t.noTabs}</div>`;
     return;
   }
   tabs.forEach(tab => {
@@ -45,7 +93,7 @@ function buildTabList(tabs, manuallyUnpinned) {
     // title
     const titleEl = document.createElement('span');
     titleEl.className = 'tab-title' + (tab.pinned ? '' : ' unpinned');
-    titleEl.textContent = tab.title || tab.url || '(読込中)';
+    titleEl.textContent = tab.title || tab.url || t.loadingTitle;
     titleEl.title = tab.title || tab.url || '';
     item.appendChild(titleEl);
 
@@ -80,11 +128,11 @@ async function refreshStatus() {
   toggleRespect.checked  = respectManualUnpin;
 
   if (hasOverride) {
-    overrideTag.textContent = '個別設定';
+    overrideTag.textContent = t.windowOverrideTag;
     overrideTag.className = 'tag';
     btnReset.style.display = 'inline';
   } else {
-    overrideTag.textContent = '既定値';
+    overrideTag.textContent = t.defaultTag;
     overrideTag.className = 'tag default';
     btnReset.style.display = 'none';
   }
@@ -93,10 +141,13 @@ async function refreshStatus() {
   buildTabList(tabs, manuallyUnpinned);
 
   const pinned = tabs.filter(t => t.pinned).length;
-  statusEl.textContent = `タブ: ${tabs.length}件 (ピン留め: ${pinned}件)`;
+  statusEl.textContent = t.statusTabs(tabs.length, pinned);
 }
 
-document.addEventListener('DOMContentLoaded', refreshStatus);
+document.addEventListener('DOMContentLoaded', () => {
+  applyI18n();
+  refreshStatus();
+});
 
 // タブ一覧の × ボタン
 tabListEl.addEventListener('click', async e => {
