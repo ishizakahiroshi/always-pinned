@@ -70,6 +70,12 @@ No data leaves your browser. No external connections are made.
 
 ---
 
+## Promo Video
+
+[Watch the promo video](docs/always-pinned.mp4)
+
+---
+
 ## License
 
 MIT
