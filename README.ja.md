@@ -12,9 +12,7 @@
 
 ## 紹介動画
 
-<video src="https://raw.githubusercontent.com/ishizakahiroshi/always-pinned/main/docs/always-pinned.mp4" controls width="720"></video>
-
-GitHub の表示環境によって埋め込みプレイヤーが表示されない場合は、こちらを利用してください: [動画を開く](https://raw.githubusercontent.com/ishizakahiroshi/always-pinned/main/docs/always-pinned.mp4)
+https://github.com/user-attachments/assets/b6619107-b977-49e8-82bd-612b725b2118
 
 ---
 
