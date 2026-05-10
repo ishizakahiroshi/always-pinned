@@ -14,7 +14,7 @@
 
 <video src="https://raw.githubusercontent.com/ishizakahiroshi/always-pinned/main/docs/always-pinned.mp4" controls width="720"></video>
 
-GitHub の表示環境によって埋め込みプレイヤーが表示されない場合は、こちらを利用してください: [動画を開く](docs/always-pinned.mp4)
+GitHub の表示環境によって埋め込みプレイヤーが表示されない場合は、こちらを利用してください: [動画を開く](https://raw.githubusercontent.com/ishizakahiroshi/always-pinned/main/docs/always-pinned.mp4)
 
 ---
 

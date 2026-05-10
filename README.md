@@ -14,7 +14,7 @@ A Chrome extension that keeps all tabs pinned — automatically. New tabs are pi
 
 <video src="https://raw.githubusercontent.com/ishizakahiroshi/always-pinned/main/docs/always-pinned.mp4" controls width="720"></video>
 
-If the embedded player is not shown on your GitHub view, use this direct link: [Watch the promo video](docs/always-pinned.mp4)
+If the embedded player is not shown on your GitHub view, use this direct link: [Watch the promo video](https://raw.githubusercontent.com/ishizakahiroshi/always-pinned/main/docs/always-pinned.mp4)
 
 ---
 
