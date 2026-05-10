@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 260px;
+      padding: 14px 16px 12px;
+      font-family: 'Segoe UI', 'Yu Gothic UI', sans-serif;
+      font-size: 13px;
+      color: #333;
+      background: #fff;
+    }
+    h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .section-title {
+      font-size: 10px;
+      color: #888;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .label { font-size: 13px; }
+    .label-sm { font-size: 12px; color: #555; }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #ccc;
+      border-radius: 24px;
+      transition: background 0.25s;
+    }
+    .slider::before {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      left: 3px; bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.25s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.3);
+    }
+    input:checked + .slider { background: #1a73e8; }
+    input:checked + .slider::before { transform: translateX(18px); }
+    .override-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .tag {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: #e8f0fe;
+      color: #1a73e8;
+    }
+    .tag.default { background: #f1f3f4; color: #888; }
+    .text-btn {
+      font-size: 10px;
+      color: #c5221f;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      width: auto;
+      text-decoration: underline;
+    }
+    .text-btn:hover { color: #a50e0e; }
+    /* タブ一覧 */
+    .tab-list {
+      max-height: 148px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+      border-radius: 5px;
+      margin-bottom: 8px;
+    }
+    .tab-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .tab-item:last-child { border-bottom: none; }
+    .tab-item:hover { background: #f8f9fa; }
+    .favicon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      border-radius: 2px;
+    }
+    .favicon-fallback {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      border-radius: 2px;
+      background: #ddd;
+    }
+    .tab-title {
+      flex: 1;
+      font-size: 11px;
+      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tab-title.unpinned { color: #aaa; font-style: italic; }
+    .close-btn {
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: none;
+      border-radius: 3px;
+      background: none;
+      color: #bbb;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, color 0.15s;
+    }
+    .close-btn:hover { background: #f28b82; color: #fff; }
+    /* ボタン */
+    .btn-group { display: flex; gap: 6px; margin-bottom: 8px; }
+    button.action {
+      flex: 1;
+      padding: 6px 4px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background: #f8f9fa;
+      font-size: 11px;
+      cursor: pointer;
+      color: #333;
+      transition: background 0.15s;
+    }
+    button.action:hover { background: #e8eaed; }
+    button.action.danger { border-color: #f28b82; color: #c5221f; }
+    button.action.danger:hover { background: #fce8e6; }
+    .status { font-size: 11px; color: #777; margin-bottom: 10px; }
+    .divider { border: none; border-top: 1px solid #eee; margin: 8px 0; }
+    .note { font-size: 10px; color: #aaa; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h3>📌 Always Pinned</h3>
+
+  <div class="section-title">このウィンドウ</div>
+  <div class="row">
+    <span class="label">強制ピン留め</span>
+    <label class="switch">
+      <input type="checkbox" id="toggle">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="override-row">
+    <span id="override-tag" class="tag default">既定値</span>
+    <button id="btn-reset" class="text-btn" style="display:none">× リセット</button>
+  </div>
+
+  <div class="tab-list" id="tab-list"></div>
+
+  <div class="btn-group">
+    <button id="btn-pin-all" class="action">▶ 全ピン留め</button>
+    <button id="btn-unpin-all" class="action danger">✕ 全解除</button>
+  </div>
+
+  <div class="status" id="status">読み込み中...</div>
+
+  <hr class="divider">
+
+  <div class="section-title">既定値設定</div>
+  <div class="row">
+    <span class="label-sm">強制ピン留め</span>
+    <label class="switch">
+      <input type="checkbox" id="toggle-global">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="row">
+    <span class="label-sm">新規タブを除外</span>
+    <label class="switch">
+      <input type="checkbox" id="toggle-skip-newtab">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="row">
+    <span class="label-sm">手動解除を尊重</span>
+    <label class="switch">
+      <input type="checkbox" id="toggle-respect-unpin">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="note">※ ウィンドウ設定・手動解除リストはブラウザ再起動時にリセット</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
