@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <style>
@@ -169,54 +169,54 @@
 <body>
   <h3>📌 Always Pinned</h3>
 
-  <div class="section-title">このウィンドウ</div>
+  <div class="section-title" data-i18n="sectionCurrentWindow">This Window</div>
   <div class="row">
-    <span class="label">強制ピン留め</span>
+    <span class="label" data-i18n="forcePinningCurrent">Pin This Window</span>
     <label class="switch">
       <input type="checkbox" id="toggle">
       <span class="slider"></span>
     </label>
   </div>
   <div class="override-row">
-    <span id="override-tag" class="tag default">既定値</span>
-    <button id="btn-reset" class="text-btn" style="display:none">× リセット</button>
+    <span id="override-tag" class="tag default" data-i18n="defaultTag">Default</span>
+    <button id="btn-reset" class="text-btn" style="display:none" data-i18n="resetButton">× Reset</button>
   </div>
 
   <div class="tab-list" id="tab-list"></div>
 
   <div class="btn-group">
-    <button id="btn-pin-all" class="action">▶ 全ピン留め</button>
-    <button id="btn-unpin-all" class="action danger">✕ 全解除</button>
+    <button id="btn-pin-all" class="action" data-i18n="pinAll">▶ Pin All</button>
+    <button id="btn-unpin-all" class="action danger" data-i18n="unpinAll">✕ Unpin All</button>
   </div>
 
-  <div class="status" id="status">読み込み中...</div>
+  <div class="status" id="status" data-i18n="loading">Loading...</div>
 
   <hr class="divider">
 
-  <div class="section-title">既定値設定</div>
+  <div class="section-title" data-i18n="sectionDefaultSettings">Default Settings</div>
   <div class="row">
-    <span class="label-sm">強制ピン留め</span>
+    <span class="label-sm" data-i18n="forcePinningDefault">Pin New Windows by Default</span>
     <label class="switch">
       <input type="checkbox" id="toggle-global">
       <span class="slider"></span>
     </label>
   </div>
   <div class="row">
-    <span class="label-sm">新規タブを除外</span>
+    <span class="label-sm" data-i18n="excludeNewTabs">Exclude New Tabs</span>
     <label class="switch">
       <input type="checkbox" id="toggle-skip-newtab">
       <span class="slider"></span>
     </label>
   </div>
   <div class="row">
-    <span class="label-sm">手動解除を尊重</span>
+    <span class="label-sm" data-i18n="respectManualUnpin">Respect Manual Unpin</span>
     <label class="switch">
       <input type="checkbox" id="toggle-respect-unpin">
       <span class="slider"></span>
     </label>
   </div>
 
-  <div class="note">※ ウィンドウ設定・手動解除リストはブラウザ再起動時にリセット</div>
+  <div class="note" data-i18n="noteResetOnRestart">Window overrides and manual-unpin list are reset when the browser restarts.</div>
 
   <script src="popup.js"></script>
 </body>
