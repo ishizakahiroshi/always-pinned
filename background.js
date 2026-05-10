@@ -37,7 +37,7 @@ async function pinAllWindows() {
 
 async function updateBadge() {
   const { enabled } = await getSettings();
-  chrome.action.setBadgeText({ text: enabled ? 'ON' : 'OFF' });
+  chrome.action.setBadgeText({ text: enabled ? '' : 'OFF' });
   chrome.action.setBadgeBackgroundColor({ color: enabled ? '#1a73e8' : '#888888' });
 }
 
