@@ -4,3 +4,4 @@ dist/
 *.pem
 *.crx
 docs/store/
+docs/sns/
