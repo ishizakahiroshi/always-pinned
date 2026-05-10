@@ -3,3 +3,4 @@ dist/
 *.old
 *.pem
 *.crx
+docs/store/
