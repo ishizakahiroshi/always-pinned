@@ -10,6 +10,14 @@
 
 ---
 
+## 紹介動画
+
+<video src="https://raw.githubusercontent.com/ishizakahiroshi/always-pinned/main/docs/always-pinned.mp4" controls width="720"></video>
+
+GitHub の表示環境によって埋め込みプレイヤーが表示されない場合は、こちらを利用してください: [動画を開く](docs/always-pinned.mp4)
+
+---
+
 ## 機能
 
 - **全タブ強制ピン留め** — 開いているすべてのタブを一括でピン留め
