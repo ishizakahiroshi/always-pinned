@@ -1,3 +1,10 @@
+import {
+  getSettings,
+  setWindowOverride,
+  removeWindowOverride,
+  removeManuallyUnpinned
+} from './storage.js';
+
 const toggle           = document.getElementById('toggle');
 const toggleGlobal     = document.getElementById('toggle-global');
 const toggleSkipNewTab = document.getElementById('toggle-skip-newtab');
@@ -25,6 +32,8 @@ const enMessages = {
   noteResetOnRestart: 'Window overrides and manual-unpin list are reset when the browser restarts.',
   noTabs: 'No tabs',
   loadingTitle: '(Loading)',
+  closeTab: 'Close tab',
+  manuallyUnpinnedHint: 'Manually unpinned (will not be re-pinned)',
   statusTabs: (count, pinned) => `Tabs: ${count} (Pinned: ${pinned})`
 };
 const jaOverrides = {
@@ -43,6 +52,8 @@ const jaOverrides = {
     noteResetOnRestart: '※ ウィンドウ設定・手動解除リストはブラウザ再起動時にリセット',
     noTabs: 'タブなし',
     loadingTitle: '(読込中)',
+    closeTab: 'タブを閉じる',
+    manuallyUnpinnedHint: '手動で解除（再ピンしません）',
     statusTabs: (count, pinned) => `タブ: ${count}件 (ピン留め: ${pinned}件)`
 };
 const t = locale === 'ja' ? { ...enMessages, ...jaOverrides } : enMessages;
@@ -55,15 +66,12 @@ function applyI18n() {
       el.textContent = t[key];
     }
   });
-}
-
-async function getSettings() {
-  return chrome.storage.local.get({
-    enabled: true,
-    windowOverrides: {},
-    skipNewTab: true,
-    respectManualUnpin: true,
-    manuallyUnpinned: []
+  // a11y: トグル等の input には aria-label を別属性で設定する
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    const key = el.dataset.i18nAria;
+    if (t[key]) {
+      el.setAttribute('aria-label', t[key]);
+    }
   });
 }
 
@@ -73,15 +81,17 @@ function buildTabList(tabs, manuallyUnpinned) {
     tabListEl.innerHTML = `<div style="padding:8px;font-size:11px;color:#aaa;text-align:center">${t.noTabs}</div>`;
     return;
   }
+  const manuallyUnpinnedSet = new Set(manuallyUnpinned);
   tabs.forEach(tab => {
     const item = document.createElement('div');
     item.className = 'tab-item';
 
-    // favicon
+    // favicon（装飾画像なので alt は空にする）
     if (tab.favIconUrl) {
       const img = document.createElement('img');
       img.className = 'favicon';
       img.src = tab.favIconUrl;
+      img.alt = '';
       img.onerror = () => {
         img.replaceWith(makeFallbackFavicon());
       };
@@ -90,11 +100,17 @@ function buildTabList(tabs, manuallyUnpinned) {
       item.appendChild(makeFallbackFavicon());
     }
 
-    // title
+    // title（手動解除タブは視覚的に区別し、ツールチップで理由を示す）
+    const isManuallyUnpinned = manuallyUnpinnedSet.has(tab.id);
     const titleEl = document.createElement('span');
-    titleEl.className = 'tab-title' + (tab.pinned ? '' : ' unpinned');
+    titleEl.className = 'tab-title'
+      + (tab.pinned ? '' : ' unpinned')
+      + (isManuallyUnpinned ? ' manually-unpinned' : '');
     titleEl.textContent = tab.title || tab.url || t.loadingTitle;
-    titleEl.title = tab.title || tab.url || '';
+    const baseTitle = tab.title || tab.url || '';
+    titleEl.title = isManuallyUnpinned
+      ? `${baseTitle}\n${t.manuallyUnpinnedHint}`
+      : baseTitle;
     item.appendChild(titleEl);
 
     // close button
@@ -102,6 +118,8 @@ function buildTabList(tabs, manuallyUnpinned) {
     closeBtn.className = 'close-btn';
     closeBtn.textContent = '×';
     closeBtn.dataset.tabId = tab.id;
+    closeBtn.title = t.closeTab;
+    closeBtn.setAttribute('aria-label', t.closeTab);
     item.appendChild(closeBtn);
 
     tabListEl.appendChild(item);
@@ -119,8 +137,9 @@ async function refreshStatus() {
   currentWindowId = win.id;
 
   const { enabled, windowOverrides, skipNewTab, respectManualUnpin, manuallyUnpinned } = await getSettings();
-  const hasOverride = currentWindowId in windowOverrides;
-  const windowEnabled = hasOverride ? windowOverrides[currentWindowId] : enabled;
+  const overrideKey = String(currentWindowId);
+  const hasOverride = overrideKey in windowOverrides;
+  const windowEnabled = hasOverride ? windowOverrides[overrideKey] : enabled;
 
   toggle.checked         = windowEnabled;
   toggleGlobal.checked   = enabled;
@@ -153,18 +172,16 @@ document.addEventListener('DOMContentLoaded', () => {
 tabListEl.addEventListener('click', async e => {
   const btn = e.target.closest('.close-btn');
   if (!btn) return;
-  await chrome.tabs.remove(parseInt(btn.dataset.tabId));
+  await chrome.tabs.remove(parseInt(btn.dataset.tabId, 10));
   refreshStatus();
 });
 
 // このウィンドウトグル
 toggle.addEventListener('change', async () => {
-  const { windowOverrides } = await getSettings();
-  windowOverrides[currentWindowId] = toggle.checked;
-  await chrome.storage.local.set({ windowOverrides });
+  await setWindowOverride(currentWindowId, toggle.checked);
   if (toggle.checked) {
     const tabs = await chrome.tabs.query({ pinned: false, windowId: currentWindowId });
-    await Promise.all(tabs.map(t => chrome.tabs.update(t.id, { pinned: true }).catch(() => {})));
+    await Promise.all(tabs.map(t => chrome.tabs.update(t.id, { pinned: true }).catch(e => console.debug('[Always Pinned] pin failed', e))));
   }
   refreshStatus();
 });
@@ -189,25 +206,21 @@ toggleRespect.addEventListener('change', async () => {
 
 // リセット（ウィンドウ個別設定を削除）
 btnReset.addEventListener('click', async () => {
-  const { windowOverrides } = await getSettings();
-  delete windowOverrides[currentWindowId];
-  await chrome.storage.local.set({ windowOverrides });
+  await removeWindowOverride(currentWindowId);
   refreshStatus();
 });
 
 // 全ピン留め（手動解除リストからも削除）
 document.getElementById('btn-pin-all').addEventListener('click', async () => {
   const tabs = await chrome.tabs.query({ windowId: currentWindowId });
-  const tabIds = tabs.map(t => t.id);
-  const { manuallyUnpinned } = await getSettings();
-  await chrome.storage.local.set({ manuallyUnpinned: manuallyUnpinned.filter(id => !tabIds.includes(id)) });
-  await Promise.all(tabs.filter(t => !t.pinned).map(t => chrome.tabs.update(t.id, { pinned: true }).catch(() => {})));
+  await removeManuallyUnpinned(tabs.map(t => t.id));
+  await Promise.all(tabs.filter(t => !t.pinned).map(t => chrome.tabs.update(t.id, { pinned: true }).catch(e => console.debug('[Always Pinned] pin failed', e))));
   refreshStatus();
 });
 
 // 全解除
 document.getElementById('btn-unpin-all').addEventListener('click', async () => {
   const tabs = await chrome.tabs.query({ pinned: true, windowId: currentWindowId });
-  await Promise.all(tabs.map(t => chrome.tabs.update(t.id, { pinned: false }).catch(() => {})));
+  await Promise.all(tabs.map(t => chrome.tabs.update(t.id, { pinned: false }).catch(e => console.debug('[Always Pinned] unpin failed', e))));
   refreshStatus();
 });

@@ -18,6 +18,7 @@ New-Item -ItemType Directory -Force -Path $stagingDir, $distDir | Out-Null
 $files = @(
   'manifest.json',
   'background.js',
+  'storage.js',
   'popup.html',
   'popup.js',
   'icons/icon16.png',

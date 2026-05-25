@@ -127,6 +127,7 @@
       white-space: nowrap;
     }
     .tab-title.unpinned { color: #aaa; font-style: italic; }
+    .tab-title.manually-unpinned { text-decoration: line-through; }
     .close-btn {
       width: 18px;
       height: 18px;
@@ -173,7 +174,7 @@
   <div class="row">
     <span class="label" data-i18n="forcePinningCurrent">Pin This Window</span>
     <label class="switch">
-      <input type="checkbox" id="toggle">
+      <input type="checkbox" id="toggle" data-i18n-aria="forcePinningCurrent" aria-label="Pin This Window">
       <span class="slider"></span>
     </label>
   </div>
@@ -197,27 +198,27 @@
   <div class="row">
     <span class="label-sm" data-i18n="forcePinningDefault">Pin New Windows by Default</span>
     <label class="switch">
-      <input type="checkbox" id="toggle-global">
+      <input type="checkbox" id="toggle-global" data-i18n-aria="forcePinningDefault" aria-label="Pin New Windows by Default">
       <span class="slider"></span>
     </label>
   </div>
   <div class="row">
     <span class="label-sm" data-i18n="excludeNewTabs">Exclude New Tabs</span>
     <label class="switch">
-      <input type="checkbox" id="toggle-skip-newtab">
+      <input type="checkbox" id="toggle-skip-newtab" data-i18n-aria="excludeNewTabs" aria-label="Exclude New Tabs">
       <span class="slider"></span>
     </label>
   </div>
   <div class="row">
     <span class="label-sm" data-i18n="respectManualUnpin">Respect Manual Unpin</span>
     <label class="switch">
-      <input type="checkbox" id="toggle-respect-unpin">
+      <input type="checkbox" id="toggle-respect-unpin" data-i18n-aria="respectManualUnpin" aria-label="Respect Manual Unpin">
       <span class="slider"></span>
     </label>
   </div>
 
   <div class="note" data-i18n="noteResetOnRestart">Window overrides and manual-unpin list are reset when the browser restarts.</div>
 
-  <script src="popup.js"></script>
+  <script type="module" src="popup.js"></script>
 </body>
 </html>
