@@ -1,0 +1,1 @@
+e4ac46fb9d82ffde7bddde52eec0a21efd9c09456e274ac812602946440915c6  always-pinned-v0.1.2-webstore.zip

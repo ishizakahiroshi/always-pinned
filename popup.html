@@ -96,6 +96,12 @@
       border-radius: 5px;
       margin-bottom: 8px;
     }
+    .empty-state {
+      padding: 8px;
+      font-size: 11px;
+      color: #aaa;
+      text-align: center;
+    }
     .tab-item {
       display: flex;
       align-items: center;
@@ -180,14 +186,14 @@
   </div>
   <div class="override-row">
     <span id="override-tag" class="tag default" data-i18n="defaultTag">Default</span>
-    <button id="btn-reset" class="text-btn" style="display:none" data-i18n="resetButton">× Reset</button>
+    <button id="btn-reset" class="text-btn" type="button" style="display:none" data-i18n="resetButton">× Reset</button>
   </div>
 
   <div class="tab-list" id="tab-list"></div>
 
   <div class="btn-group">
-    <button id="btn-pin-all" class="action" data-i18n="pinAll">▶ Pin All</button>
-    <button id="btn-unpin-all" class="action danger" data-i18n="unpinAll">✕ Unpin All</button>
+    <button id="btn-pin-all" class="action" type="button" data-i18n="pinAll">▶ Pin All</button>
+    <button id="btn-unpin-all" class="action danger" type="button" data-i18n="unpinAll">✕ Unpin All</button>
   </div>
 
   <div class="status" id="status" data-i18n="loading">Loading...</div>

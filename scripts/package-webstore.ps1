@@ -2,6 +2,12 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 $manifestPath = Join-Path $root 'manifest.json'
+$validateScript = Join-Path $PSScriptRoot 'validate-extension.ps1'
+
+if (Test-Path -LiteralPath $validateScript -PathType Leaf) {
+  & $validateScript
+}
+
 $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
 $version = $manifest.version
 $slug = 'always-pinned'

@@ -1,5 +1,8 @@
 """アイコン生成スクリプト (標準ライブラリのみ) - 1回だけ実行する"""
-import struct, zlib, math, os
+import math
+import struct
+import zlib
+from pathlib import Path
 
 def make_png(size, pixels):
     def chunk(name, data):
@@ -50,12 +53,14 @@ def draw_pin(size):
 
     return pixels
 
-os.makedirs('icons', exist_ok=True)
+ROOT = Path(__file__).resolve().parent
+ICONS_DIR = ROOT / 'icons'
+
+ICONS_DIR.mkdir(exist_ok=True)
 for size in [16, 48, 128]:
     pixels = draw_pin(size)
-    path = f'icons/icon{size}.png'
-    with open(path, 'wb') as f:
-        f.write(make_png(size, pixels))
-    print(f'Created {path}')
+    path = ICONS_DIR / f'icon{size}.png'
+    path.write_bytes(make_png(size, pixels))
+    print(f'Created {path.relative_to(ROOT)}')
 
 print('Done.')

@@ -11,7 +11,7 @@
 const PERSISTENT_DEFAULTS = {
   enabled: true,
   skipNewTab: true,
-  respectManualUnpin: true
+  respectManualUnpin: false
 };
 
 const SESSION_DEFAULTS = {

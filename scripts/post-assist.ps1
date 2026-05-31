@@ -19,13 +19,20 @@ if (-not $Version) {
   $Version = "v$($manifest.version)"
 }
 
+$draftRoot = @('docs/sns', 'docs/local/sns') |
+  Where-Object { Test-Path -LiteralPath (Join-Path $root $_) } |
+  Select-Object -First 1
+if (-not $draftRoot) {
+  $draftRoot = 'docs/sns'
+}
+
 $platformPathMap = @{
-  qiita  = "docs/sns/qiita/$Version.md"
-  zenn   = "docs/sns/zenn/$Version.md"
-  note   = "docs/sns/note/$Version.md"
-  hatena = "docs/sns/hatena/$Version.md"
-  devto  = "docs/sns/devto/$Version.md"
-  x      = "docs/sns/x/$Version.txt"
+  qiita  = "$draftRoot/qiita/$Version.md"
+  zenn   = "$draftRoot/zenn/$Version.md"
+  note   = "$draftRoot/note/$Version.md"
+  hatena = "$draftRoot/hatena/$Version.md"
+  devto  = "$draftRoot/devto/$Version.md"
+  x      = "$draftRoot/x/$Version.txt"
 }
 
 $postUrlMap = @{
