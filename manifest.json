@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Always Pinned",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Keeps all tabs pinned. New tabs are pinned instantly, manual unpins are reversed, and each window has its own setting.",
   "permissions": ["tabs", "storage"],
   "background": {

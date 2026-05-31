@@ -21,6 +21,8 @@ https://github.com/user-attachments/assets/b6619107-b977-49e8-82bd-612b725b2118
 - **Force-pin all tabs** — pins every open tab at once
 - **Auto-pin new tabs** — tabs are pinned as soon as they open
 - **Resist manual unpin** — if you unpin a tab, it snaps back immediately
+- **Respect manual unpin mode** — optionally leave manually unpinned tabs alone
+- **New tab exclusion** — optionally keep blank new tabs unpinned until navigation
 - **Per-window control** — enable or disable independently for each Chrome window
 - **ON / OFF toggle** — suspend pinning any time from the popup
 
@@ -57,8 +59,10 @@ Click the 📌 icon in the toolbar to open the popup.
 |---|---|
 | **This window** toggle | Enable / disable pinning for the current window only |
 | **▶ Pin all in this window** | Pin all unpinned tabs in the current window immediately |
-| **✕ Unpin all in this window** | Unpin all tabs in the current window |
+| **✕ Unpin all in this window** | Turn pinning off for the current window and unpin its pinned tabs |
 | **Default** toggle (bottom) | Global default applied to windows with no individual setting |
+| **Exclude New Tabs** toggle | Leave blank new-tab pages unpinned until they navigate to a real URL |
+| **Respect Manual Unpin** toggle | Keep manually unpinned tabs unpinned until you pin them again or use Pin All |
 | **× Reset** link | Remove the per-window override and revert to the default |
 
 > **Note:** Per-window settings are cleared on browser restart (Chrome does not persist window IDs across sessions).
