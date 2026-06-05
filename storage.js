@@ -2,6 +2,7 @@
 //
 // 永続設定 (enabled / skipNewTab / respectManualUnpin) は chrome.storage.local。
 // 一時状態 (windowOverrides / manuallyUnpinned) は chrome.storage.session に置き、
+// trusted extension contexts だけから読める状態のままにする。
 // ブラウザ再起動で自動的にリセットされるようにする（onStartup の手動クリア不要）。
 //
 // windowOverrides / manuallyUnpinned の Read-Modify-Write は
@@ -30,13 +31,10 @@ function withSessionLock(task) {
 
 // 永続設定 + 一時状態をマージして返す（呼び出し側は従来どおり 5 キーを受け取れる）
 export async function getSettings() {
-  const local = await chrome.storage.local.get(PERSISTENT_DEFAULTS);
-  let session = { ...SESSION_DEFAULTS };
-  try {
-    session = await chrome.storage.session.get(SESSION_DEFAULTS);
-  } catch {
-    // popup 起動直後など access level 設定前は session へアクセスできない場合がある。既定値で代替する。
-  }
+  const [local, session] = await Promise.all([
+    chrome.storage.local.get(PERSISTENT_DEFAULTS),
+    chrome.storage.session.get(SESSION_DEFAULTS)
+  ]);
   return { ...local, ...session };
 }
 

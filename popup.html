@@ -168,6 +168,16 @@
     button.action:hover { background: #e8eaed; }
     button.action.danger { border-color: #f28b82; color: #c5221f; }
     button.action.danger:hover { background: #fce8e6; }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+    button.action:disabled:hover { background: #f8f9fa; }
+    button.action.danger:disabled:hover { background: #f8f9fa; }
+    input:disabled + .slider {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
     .status { font-size: 11px; color: #777; margin-bottom: 10px; }
     .divider { border: none; border-top: 1px solid #eee; margin: 8px 0; }
     .note { font-size: 10px; color: #aaa; margin-top: 6px; }

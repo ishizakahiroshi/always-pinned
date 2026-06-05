@@ -186,8 +186,24 @@ $popupHtml = Get-Content -Raw -LiteralPath (Join-Path $root 'popup.html')
 if ($popupHtml -match '(?is)<script(?![^>]*\bsrc=)[^>]*>') {
   Add-ValidationError 'popup.html must not contain inline scripts.'
 }
+if ($popupHtml -match '(?is)\son[a-z]+\s*=') {
+  Add-ValidationError 'popup.html must not contain inline event handlers.'
+}
+if ($popupHtml -match '(?is)<(?:script|link|img|iframe|object|embed)[^>]+(?:src|href)\s*=\s*["'']https?://') {
+  Add-ValidationError 'popup.html must not load remote resources.'
+}
 if ($popupHtml -notmatch '<script[^>]+type="module"[^>]+src="popup\.js"') {
   Add-ValidationError 'popup.html must load popup.js as a module script.'
+}
+
+$javascriptSources = @('background.js', 'popup.js', 'storage.js') |
+  ForEach-Object { Get-Content -Raw -LiteralPath (Join-Path $root $_) }
+$combinedJavaScript = $javascriptSources -join "`n"
+if ($combinedJavaScript -match 'TRUSTED_AND_UNTRUSTED_CONTEXTS') {
+  Add-ValidationError 'chrome.storage.session must not be exposed to untrusted contexts.'
+}
+if ($combinedJavaScript -cmatch '(?s)\.src\s*=\s*[^;]*\.favIconUrl') {
+  Add-ValidationError 'popup favicon rendering must sanitize tab favIconUrl before assigning img.src.'
 }
 
 $changelog = Get-Content -Raw -LiteralPath (Join-Path $root 'CHANGELOG.md')
