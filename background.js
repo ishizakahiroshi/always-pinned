@@ -27,12 +27,6 @@ async function updateTabPinned(tabId, pinned, label) {
   }
 }
 
-// popup（非特権コンテキスト）からも session を読めるようにする。
-// 一度設定すればブラウザセッション中は維持されるため、SW 起動時に呼んでおく。
-runAsync('setAccessLevel', () => (
-  chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' })
-));
-
 async function getWindowEnabled(windowId) {
   const { enabled, windowOverrides } = await getSettings();
   const key = String(windowId);

@@ -15,6 +15,8 @@ const tabListEl        = document.getElementById('tab-list');
 const statusEl         = document.getElementById('status');
 
 let currentWindowId;
+let controlsReady = false;
+let actionDepth = 0;
 const LOG_PREFIX = '[Always Pinned]';
 const locale = (navigator.language || 'en').toLowerCase().startsWith('ja') ? 'ja' : 'en';
 const enMessages = {
@@ -65,12 +67,35 @@ function debug(message, error) {
   console.debug(`${LOG_PREFIX} ${message}`, error);
 }
 
+function setControlsDisabled(disabled) {
+  document.querySelectorAll('button, input').forEach(control => {
+    control.disabled = disabled;
+  });
+}
+
+function updateControlsAvailability() {
+  setControlsDisabled(!controlsReady || actionDepth > 0);
+}
+
 function runAction(label, task) {
+  actionDepth += 1;
+  updateControlsAvailability();
   Promise.resolve()
     .then(task)
-    .catch(error => {
+    .catch(async error => {
       debug(`${label} failed`, error);
+      if (label !== 'refresh status') {
+        try {
+          await refreshStatus();
+        } catch (refreshError) {
+          debug('refresh after error failed', refreshError);
+        }
+      }
       statusEl.textContent = t.statusError;
+    })
+    .finally(() => {
+      actionDepth = Math.max(0, actionDepth - 1);
+      updateControlsAvailability();
     });
 }
 
@@ -100,6 +125,19 @@ function applyI18n() {
   });
 }
 
+function getSafeFaviconUrl(favIconUrl) {
+  if (!favIconUrl) return '';
+
+  try {
+    const url = new URL(favIconUrl);
+    if (url.protocol === 'chrome:') return favIconUrl;
+    if (url.protocol === 'chrome-extension:' && url.hostname === chrome.runtime.id) return favIconUrl;
+  } catch {
+    // Invalid or relative favicon URLs are ignored to avoid loading untrusted resources.
+  }
+  return '';
+}
+
 function buildTabList(tabs, manuallyUnpinned) {
   tabListEl.innerHTML = '';
   if (!tabs.length) {
@@ -115,11 +153,13 @@ function buildTabList(tabs, manuallyUnpinned) {
     item.className = 'tab-item';
 
     // favicon（装飾画像なので alt は空にする）
-    if (tab.favIconUrl) {
+    const faviconUrl = getSafeFaviconUrl(tab.favIconUrl);
+    if (faviconUrl) {
       const img = document.createElement('img');
       img.className = 'favicon';
-      img.src = tab.favIconUrl;
+      img.src = faviconUrl;
       img.alt = '';
+      img.referrerPolicy = 'no-referrer';
       img.onerror = () => {
         img.replaceWith(makeFallbackFavicon());
       };
@@ -189,12 +229,15 @@ async function refreshStatus() {
 
   const pinned = tabs.filter(t => t.pinned).length;
   statusEl.textContent = t.statusTabs(tabs.length, pinned);
+  controlsReady = true;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   applyI18n();
   runAction('refresh status', refreshStatus);
 });
+
+updateControlsAvailability();
 
 // タブ一覧の × ボタン
 tabListEl.addEventListener('click', e => {
