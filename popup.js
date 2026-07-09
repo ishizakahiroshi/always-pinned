@@ -4,6 +4,7 @@ import {
   removeWindowOverride,
   removeManuallyUnpinned
 } from './storage.js';
+import { shouldAutoPinTab } from './utils.js';
 
 const toggle           = document.getElementById('toggle');
 const toggleGlobal     = document.getElementById('toggle-global');
@@ -130,12 +131,28 @@ function getSafeFaviconUrl(favIconUrl) {
 
   try {
     const url = new URL(favIconUrl);
+    // 一般サイトの favicon（http/https）と data:image は img 表示のみでスクリプト実行しない。
+    // javascript: 等は protocol ホワイトリストで拒否する。
+    if (url.protocol === 'https:' || url.protocol === 'http:') return favIconUrl;
+    if (url.protocol === 'data:' && /^data:image\//i.test(favIconUrl)) return favIconUrl;
     if (url.protocol === 'chrome:') return favIconUrl;
     if (url.protocol === 'chrome-extension:' && url.hostname === chrome.runtime.id) return favIconUrl;
   } catch {
     // Invalid or relative favicon URLs are ignored to avoid loading untrusted resources.
   }
   return '';
+}
+
+/** 現在ウィンドウの未ピンタブを、skipNewTab / respectManualUnpin を尊重してピン留めする */
+async function pinEligibleTabsInCurrentWindow() {
+  if (currentWindowId == null) return;
+  const settings = await getSettings();
+  const tabs = await chrome.tabs.query({ pinned: false, windowId: currentWindowId });
+  await Promise.all(
+    tabs
+      .filter(tab => shouldAutoPinTab(tab, settings))
+      .map(tab => updateTabPinned(tab.id, true, 'pin tab'))
+  );
 }
 
 function buildTabList(tabs, manuallyUnpinned) {
@@ -244,7 +261,9 @@ tabListEl.addEventListener('click', e => {
   const btn = e.target.closest('.close-btn');
   if (!btn) return;
   runAction('close tab', async () => {
-    await chrome.tabs.remove(Number.parseInt(btn.dataset.tabId, 10));
+    const tabId = Number.parseInt(btn.dataset.tabId, 10);
+    if (!Number.isInteger(tabId)) return;
+    await chrome.tabs.remove(tabId);
     await refreshStatus();
   });
 });
@@ -253,9 +272,9 @@ tabListEl.addEventListener('click', e => {
 toggle.addEventListener('change', () => {
   runAction('toggle window', async () => {
     await setWindowOverride(currentWindowId, toggle.checked);
+    // background.pinTabsInWindow と同条件（手動解除・新規タブ除外を尊重）
     if (toggle.checked) {
-      const tabs = await chrome.tabs.query({ pinned: false, windowId: currentWindowId });
-      await Promise.all(tabs.map(tab => updateTabPinned(tab.id, true, 'pin tab')));
+      await pinEligibleTabsInCurrentWindow();
     }
     await refreshStatus();
   });
@@ -289,6 +308,11 @@ toggleRespect.addEventListener('change', () => {
 btnReset.addEventListener('click', () => {
   runAction('reset window override', async () => {
     await removeWindowOverride(currentWindowId);
+    // 既定が ON なら、override 削除後の実効状態に合わせて未ピンを再同期
+    const { enabled } = await getSettings();
+    if (enabled) {
+      await pinEligibleTabsInCurrentWindow();
+    }
     await refreshStatus();
   });
 });

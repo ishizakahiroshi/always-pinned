@@ -25,6 +25,7 @@ $files = @(
   'manifest.json',
   'background.js',
   'storage.js',
+  'utils.js',
   'popup.html',
   'popup.js',
   'icons/icon16.png',
