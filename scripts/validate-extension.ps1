@@ -139,6 +139,7 @@ $requiredFiles = [System.Collections.Generic.HashSet[string]]::new([System.Strin
   'manifest.json',
   'background.js',
   'storage.js',
+  'utils.js',
   'popup.html',
   'popup.js',
   'README.md',
@@ -196,7 +197,7 @@ if ($popupHtml -notmatch '<script[^>]+type="module"[^>]+src="popup\.js"') {
   Add-ValidationError 'popup.html must load popup.js as a module script.'
 }
 
-$javascriptSources = @('background.js', 'popup.js', 'storage.js') |
+$javascriptSources = @('background.js', 'popup.js', 'storage.js', 'utils.js') |
   ForEach-Object { Get-Content -Raw -LiteralPath (Join-Path $root $_) }
 $combinedJavaScript = $javascriptSources -join "`n"
 if ($combinedJavaScript -match 'TRUSTED_AND_UNTRUSTED_CONTEXTS') {
@@ -212,7 +213,7 @@ if (-not $changelog.Contains($versionHeading) -and $changelog -notmatch '(?m)^##
   Add-ValidationError "CHANGELOG.md must contain $versionHeading or an Unreleased section."
 }
 
-Test-JavaScriptSyntax @('background.js', 'popup.js', 'storage.js')
+Test-JavaScriptSyntax @('background.js', 'popup.js', 'storage.js', 'utils.js')
 Test-PowerShellSyntax @('scripts/package-webstore.ps1', 'scripts/post-assist.ps1', 'scripts/validate-extension.ps1')
 
 if ($errors.Count -gt 0) {

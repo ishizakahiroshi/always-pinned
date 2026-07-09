@@ -5,6 +5,7 @@ import {
   removeManuallyUnpinned,
   clearManuallyUnpinned
 } from './storage.js';
+import { isNewTabUrl, shouldAutoPinTab } from './utils.js';
 
 const LOG_PREFIX = '[Always Pinned]';
 
@@ -33,20 +34,16 @@ async function getWindowEnabled(windowId) {
   return key in windowOverrides ? windowOverrides[key] : enabled;
 }
 
-function isNewTabUrl(url) {
-  return !url || url === 'chrome://newtab/' || url === 'about:blank';
-}
-
 async function pinTabsInWindow(windowId) {
-  const { skipNewTab, respectManualUnpin, manuallyUnpinned, enabled, windowOverrides } = await getSettings();
+  const settings = await getSettings();
+  const { enabled, windowOverrides } = settings;
   const key = String(windowId);
   const isEnabled = key in windowOverrides ? windowOverrides[key] : enabled;
   if (!isEnabled) return;
 
   const tabs = await chrome.tabs.query({ pinned: false, windowId });
   await Promise.all(tabs.map(async tab => {
-    if (respectManualUnpin && manuallyUnpinned.includes(tab.id)) return;
-    if (skipNewTab && isNewTabUrl(tab.url || tab.pendingUrl)) return;
+    if (!shouldAutoPinTab(tab, settings)) return;
     await updateTabPinned(tab.id, true, 'pin tab');
   }));
 }
@@ -93,10 +90,9 @@ async function refreshFocusedBadge() {
 
 chrome.tabs.onCreated.addListener(tab => {
   runAsync('tabs.onCreated', async () => {
-    const { skipNewTab, respectManualUnpin, manuallyUnpinned } = await getSettings();
     if (!await getWindowEnabled(tab.windowId)) return;
-    if (respectManualUnpin && manuallyUnpinned.includes(tab.id)) return;
-    if (skipNewTab && isNewTabUrl(tab.url || tab.pendingUrl)) return;
+    const settings = await getSettings();
+    if (!shouldAutoPinTab(tab, settings)) return;
     await updateTabPinned(tab.id, true, 'pin tab');
   });
 });
@@ -202,7 +198,10 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   });
 });
 
-runAsync('initial badge update', async () => {
+// SW 起動時（インストール直後・イベント起床・開発者リロード含む）にピン状態を再同期。
+// MV3 では SW が落ちている間に作られたタブの onCreated を取りこぼしうるため。
+runAsync('initial sync', async () => {
+  await pinAllWindows();
   await updateGlobalBadge();
   await refreshFocusedBadge();
 });
