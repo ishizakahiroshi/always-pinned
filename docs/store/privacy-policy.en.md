@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last updated: 2026-05-10
+Last updated: 2026-07-10
 
 Always Pinned does not collect, store, sell, or share personal information.
 
@@ -22,6 +22,7 @@ This data stays inside the user's browser and is not transmitted externally.
 
 - tabs: Used to read tab pinned status and update tab pinned status when needed.
 - storage: Used to save extension settings.
+- contextMenus: Used to offer “keep unpinned” / “allow re-pin” actions on tab right-click menus.
 
 ## Changes
 

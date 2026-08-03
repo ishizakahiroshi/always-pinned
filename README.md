@@ -64,6 +64,11 @@ Click the 📌 icon in the toolbar to open the popup.
 | **Exclude New Tabs** toggle | Leave blank new-tab pages unpinned until they navigate to a real URL |
 | **Respect Manual Unpin** toggle | Keep manually unpinned tabs unpinned until you pin them again or use Pin All |
 | **× Reset** link | Remove the per-window override and revert to the default |
+| **Lock tight / Soft pin** | Presets (hard re-pin / exclude new tabs + respect manual unpin) |
+| **Row P / +** | Unpin and keep free / allow re-pin again / pin tab |
+| **Filter** | Filter the tab list by title or URL |
+| **Keyboard shortcut** | Toggle pinning for the current window (`chrome://extensions/shortcuts`; suggested default Ctrl+Shift+Y) |
+| **Tab right-click** | Keep unpinned / allow re-pin again |
 
 > **Note:** Per-window settings are cleared on browser restart (Chrome does not persist window IDs across sessions).
 
@@ -75,6 +80,7 @@ Click the 📌 icon in the toolbar to open the popup.
 |---|---|
 | `tabs` | Read tab state and update pinned status |
 | `storage` | Persist the enabled / disabled setting |
+| `contextMenus` | Tab context-menu actions for exceptions |
 
 No data leaves your browser. No external connections are made.
 

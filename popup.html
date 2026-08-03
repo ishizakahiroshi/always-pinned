@@ -5,7 +5,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      width: 260px;
+      width: 280px;
       padding: 14px 16px 12px;
       font-family: 'Segoe UI', 'Yu Gothic UI', sans-serif;
       font-size: 13px;
@@ -15,10 +15,43 @@
     h3 {
       font-size: 14px;
       font-weight: 600;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 6px;
+    }
+    .title-text { display: flex; align-items: center; gap: 6px; }
+    .window-pill {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e8f0fe;
+      color: #1a73e8;
+      flex-shrink: 0;
+    }
+    .window-pill.off {
+      background: #f1f3f4;
+      color: #888;
+    }
+    .hero {
+      border: 1px solid #e8eaed;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      background: #f8f9fa;
+    }
+    .hero-main {
+      font-size: 13px;
+      font-weight: 600;
+      color: #202124;
+      margin-bottom: 2px;
+    }
+    .hero-sub {
+      font-size: 10px;
+      color: #888;
+      line-height: 1.4;
     }
     .section-title {
       font-size: 10px;
@@ -32,15 +65,29 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 6px;
+      gap: 8px;
     }
+    .row-setting {
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .setting-text { flex: 1; min-width: 0; }
     .label { font-size: 13px; }
     .label-sm { font-size: 12px; color: #555; }
+    .help {
+      display: block;
+      font-size: 10px;
+      color: #999;
+      line-height: 1.35;
+      margin-top: 2px;
+    }
     .switch {
       position: relative;
       display: inline-block;
       width: 42px;
       height: 24px;
       flex-shrink: 0;
+      margin-top: 1px;
     }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
@@ -88,6 +135,55 @@
       text-decoration: underline;
     }
     .text-btn:hover { color: #a50e0e; }
+    .text-btn.linkish {
+      color: #1a73e8;
+      text-decoration: none;
+    }
+    .text-btn.linkish:hover { color: #174ea6; text-decoration: underline; }
+    .preset-group {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    button.preset {
+      flex: 1;
+      padding: 5px 4px;
+      border: 1px solid #dadce0;
+      border-radius: 5px;
+      background: #fff;
+      font-size: 11px;
+      cursor: pointer;
+      color: #333;
+    }
+    button.preset:hover { background: #f1f3f4; }
+    .preset-hint {
+      font-size: 10px;
+      color: #999;
+      margin: -4px 0 8px;
+      line-height: 1.35;
+    }
+    .filter-row {
+      margin-bottom: 6px;
+    }
+    .filter-input {
+      width: 100%;
+      padding: 5px 8px;
+      border: 1px solid #dadce0;
+      border-radius: 5px;
+      font-size: 11px;
+      font-family: inherit;
+      color: #333;
+    }
+    .filter-input:focus {
+      outline: none;
+      border-color: #1a73e8;
+    }
+    .filter-meta {
+      font-size: 10px;
+      color: #999;
+      margin-bottom: 4px;
+      min-height: 14px;
+    }
     /* タブ一覧 */
     .tab-list {
       max-height: 148px;
@@ -131,18 +227,20 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      min-width: 0;
     }
     .tab-title.unpinned { color: #aaa; font-style: italic; }
     .tab-title.manually-unpinned { text-decoration: line-through; }
-    .close-btn {
+    .icon-btn {
       width: 18px;
       height: 18px;
       padding: 0;
       border: none;
       border-radius: 3px;
       background: none;
-      color: #bbb;
-      font-size: 13px;
+      color: #888;
+      font-size: 11px;
+      font-weight: 600;
       line-height: 1;
       cursor: pointer;
       display: flex;
@@ -151,7 +249,9 @@
       flex-shrink: 0;
       transition: background 0.15s, color 0.15s;
     }
-    .close-btn:hover { background: #f28b82; color: #fff; }
+    .icon-btn:hover { background: #e8f0fe; color: #1a73e8; }
+    .icon-btn.close-btn { color: #bbb; font-size: 13px; font-weight: 400; }
+    .icon-btn.close-btn:hover { background: #f28b82; color: #fff; }
     /* ボタン */
     .btn-group { display: flex; gap: 6px; margin-bottom: 8px; }
     button.action {
@@ -174,17 +274,31 @@
     }
     button.action:disabled:hover { background: #f8f9fa; }
     button.action.danger:disabled:hover { background: #f8f9fa; }
+    button.preset:disabled:hover { background: #fff; }
     input:disabled + .slider {
       cursor: not-allowed;
       opacity: 0.65;
     }
-    .status { font-size: 11px; color: #777; margin-bottom: 10px; }
+    .status { font-size: 11px; color: #777; margin-bottom: 10px; min-height: 16px; }
+    .status.feedback { color: #1a73e8; font-weight: 600; }
     .divider { border: none; border-top: 1px solid #eee; margin: 8px 0; }
-    .note { font-size: 10px; color: #aaa; margin-top: 6px; }
+    .note { font-size: 10px; color: #aaa; margin-top: 6px; line-height: 1.4; }
+    .footer-links {
+      margin-top: 6px;
+      font-size: 10px;
+    }
   </style>
 </head>
 <body>
-  <h3>📌 Always Pinned</h3>
+  <h3>
+    <span class="title-text">📌 Always Pinned</span>
+    <span id="window-pill" class="window-pill off">—</span>
+  </h3>
+
+  <div class="hero" id="hero" aria-live="polite">
+    <div class="hero-main" id="hero-main" data-i18n="loading">Loading...</div>
+    <div class="hero-sub" id="hero-sub"></div>
+  </div>
 
   <div class="section-title" data-i18n="sectionCurrentWindow">This Window</div>
   <div class="row">
@@ -199,6 +313,17 @@
     <button id="btn-reset" class="text-btn" type="button" style="display:none" data-i18n="resetButton">× Reset</button>
   </div>
 
+  <div class="section-title" data-i18n="sectionPresets">Presets</div>
+  <div class="preset-group">
+    <button id="btn-preset-lock" class="preset" type="button" data-i18n="presetLock">Lock tight</button>
+    <button id="btn-preset-soft" class="preset" type="button" data-i18n="presetSoft">Soft pin</button>
+  </div>
+  <div class="preset-hint" data-i18n="presetHint">Lock tight = re-pin hard · Soft pin = skip new tabs + respect manual unpin</div>
+
+  <div class="filter-row">
+    <input type="search" id="tab-filter" class="filter-input" data-i18n-placeholder="filterPlaceholder" placeholder="Filter tabs..." autocomplete="off" spellcheck="false">
+  </div>
+  <div class="filter-meta" id="filter-meta"></div>
   <div class="tab-list" id="tab-list"></div>
 
   <div class="btn-group">
@@ -211,22 +336,30 @@
   <hr class="divider">
 
   <div class="section-title" data-i18n="sectionDefaultSettings">Default Settings</div>
-  <div class="row">
-    <span class="label-sm" data-i18n="forcePinningDefault">Pin New Windows by Default</span>
+  <div class="row row-setting">
+    <div class="setting-text">
+      <span class="label-sm" data-i18n="forcePinningDefault">Pin New Windows by Default</span>
+    </div>
     <label class="switch">
       <input type="checkbox" id="toggle-global" data-i18n-aria="forcePinningDefault" aria-label="Pin New Windows by Default">
       <span class="slider"></span>
     </label>
   </div>
-  <div class="row">
-    <span class="label-sm" data-i18n="excludeNewTabs">Exclude New Tabs</span>
+  <div class="row row-setting">
+    <div class="setting-text">
+      <span class="label-sm" data-i18n="excludeNewTabs">Exclude New Tabs</span>
+      <span class="help" data-i18n="excludeNewTabsHelp">Empty new tabs stay unpinned until they get a real URL.</span>
+    </div>
     <label class="switch">
       <input type="checkbox" id="toggle-skip-newtab" data-i18n-aria="excludeNewTabs" aria-label="Exclude New Tabs">
       <span class="slider"></span>
     </label>
   </div>
-  <div class="row">
-    <span class="label-sm" data-i18n="respectManualUnpin">Respect Manual Unpin</span>
+  <div class="row row-setting">
+    <div class="setting-text">
+      <span class="label-sm" data-i18n="respectManualUnpin">Respect Manual Unpin</span>
+      <span class="help" data-i18n="respectManualUnpinHelp">Tabs you unpin by hand stay free until you Pin All again.</span>
+    </div>
     <label class="switch">
       <input type="checkbox" id="toggle-respect-unpin" data-i18n-aria="respectManualUnpin" aria-label="Respect Manual Unpin">
       <span class="slider"></span>
@@ -234,6 +367,9 @@
   </div>
 
   <div class="note" data-i18n="noteResetOnRestart">Window overrides and manual-unpin list are reset when the browser restarts.</div>
+  <div class="footer-links">
+    <button id="btn-shortcuts" class="text-btn linkish" type="button" data-i18n="openShortcuts">Set keyboard shortcut…</button>
+  </div>
 
   <script type="module" src="popup.js"></script>
 </body>

@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Always Pinned UX 改善提案 — 2026-07-10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f7f3ea; --ink:#241f1a; --ink-soft:#837a6c; --line:rgba(36,31,26,0.12);
+    --accent:#ff7a3d; --card:#fffdf8; --ok:#2e7d4f; --warn:#b8860b; --bad:#b3261e;
+    --display:'Baloo 2','Zen Maru Gothic',system-ui,cursive;
+    --body:'Zen Maru Gothic',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0;padding:0}
+  body{font-family:var(--body);color:var(--ink);background:var(--bg);line-height:1.7;font-size:16px;text-wrap:pretty}
+  .wrap{max-width:min(1180px,94vw);margin:0 auto;padding:48px 0 80px}
+  h1{font-family:var(--display);font-weight:800;font-size:2rem;margin:0 0 8px;letter-spacing:-0.01em}
+  h2{font-family:var(--display);font-weight:700;font-size:1.4rem;margin:48px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+  h3{font-family:var(--display);font-weight:700;font-size:1.1rem;margin:28px 0 10px}
+  p,li{font-size:1rem}
+  a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px}
+  .card{background:var(--card);border:2px solid var(--ink);border-radius:18px;padding:22px 24px;box-shadow:4px 5px 0 var(--line);margin:16px 0}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:#fff;border:2px solid var(--ink);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);font-size:0.94rem;vertical-align:top}
+  th{background:#fffdf8;font-family:var(--display);font-weight:700}
+  tr:last-child td{border-bottom:0}
+  .tag{display:inline-block;padding:2px 10px;border-radius:999px;font-family:var(--display);font-weight:700;font-size:0.78rem;border:2px solid var(--ink);background:#fff;color:var(--ink)}
+  .tag-ok{background:var(--ok);color:#fff} .tag-warn{background:var(--warn);color:#fff}
+  .tag-bad{background:var(--bad);color:#fff} .tag-accent{background:var(--accent);color:#fff}
+  .system-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;border:2px solid var(--ink);background:var(--card);font-family:var(--display);font-weight:700;font-size:0.86rem}
+  .system-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .meta{color:var(--ink-soft);font-size:0.88rem}
+  .header-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px}
+  .tldr{font-size:1.05rem;max-width:70ch}
+  .pri{font-family:var(--display);font-weight:700;white-space:nowrap}
+  .wf{border:2px solid var(--ink);border-radius:14px;background:#fff;padding:0;margin:18px 0;overflow:hidden}
+  .wf-frame{padding:16px;display:flex;flex-direction:column;gap:10px}
+  .wf-header{border:1.5px dashed var(--ink);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-family:var(--display);font-weight:700;font-size:0.95rem}
+  .wf-block{border:1.5px dashed var(--ink-soft);border-radius:10px;padding:10px 12px;color:var(--ink);font-size:0.9rem}
+  .wf-soft{color:var(--ink-soft);font-size:0.82rem}
+  .wf-row{display:flex;gap:8px;align-items:center}
+  .wf-row > *{flex:1}
+  .wf-fixed{flex:0 0 auto}
+  .wf-switch{width:42px;height:22px;border:1.5px solid var(--ink);border-radius:999px;position:relative;flex:0 0 auto}
+  .wf-switch::after{content:"";position:absolute;width:14px;height:14px;border:1.5px solid var(--ink);border-radius:50%;top:2px;left:3px}
+  .wf-switch.on::after{left:21px}
+  .wf-btn{border:1.5px solid var(--ink);border-radius:8px;padding:8px 6px;text-align:center;font-size:0.8rem;font-family:var(--display);font-weight:700}
+  .wf-btn.danger{border-style:dashed}
+  .wf-pill{display:inline-block;border:1.5px solid var(--ink);border-radius:999px;padding:1px 8px;font-size:0.72rem;font-family:var(--display);font-weight:700}
+  .wf-tab{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:0.82rem}
+  .wf-tab:last-child{border-bottom:0}
+  .wf-ico{width:14px;height:14px;border:1.5px solid var(--ink-soft);border-radius:3px;flex:0 0 auto}
+  .wf-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wf-title.muted{color:var(--ink-soft);text-decoration:line-through}
+  .wf-action{width:18px;height:18px;border:1.5px solid var(--ink-soft);border-radius:4px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-family:var(--display)}
+  .wf-caption{font-size:0.84rem;color:var(--ink-soft);padding:8px 16px;border-top:1px solid var(--line);background:#fffdf8}
+  .wf-popup{max-width:280px;margin:0 auto}
+  .wf-status{font-family:var(--display);font-weight:700;font-size:0.95rem}
+  .wf-hint{font-size:0.78rem;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:8px;margin-top:2px}
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:760px){.compare{grid-template-columns:1fr}}
+  .flow{font-family:var(--display);font-size:0.95rem;line-height:1.9;background:#fff;border:2px solid var(--ink);border-radius:12px;padding:16px 20px;overflow-x:auto}
+  .flow code{font-family:ui-monospace,Consolas,monospace;font-size:0.88rem}
+  ul.checklist{list-style:none;padding-left:0}
+  ul.checklist li{padding:6px 0;border-bottom:1px dashed var(--line)}
+  ul.checklist li::before{content:"☐";margin-right:10px;font-family:var(--display)}
+  .screen-list a{font-family:var(--display);font-weight:700}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:760px){.two-col{grid-template-columns:1fr}}
+  @media print{ body{background:#fff} .card{box-shadow:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header-row">
+    <span class="system-badge"><span class="dot"></span>対象: <b>Always Pinned</b></span>
+    <span class="tag tag-accent">草案</span>
+    <span class="meta">v0.1.2 起点 · 2026-07-10</span>
+  </div>
+  <h1>ユーザーが喜ぶ機能・UX 改善提案</h1>
+  <p class="tldr meta">直近リポジトリに独立した UI 提案ドキュメントは無かったため、現行 popup（v0.1.2）と直近監査・改善 plan の文脈から、利用者が「分かりやすい・迷わない・一手で済む」と感じる改善案を wireframe 付きで起こした。実装確定ではない。</p>
+
+  <div class="card">
+    <p class="tldr"><strong>TL;DR</strong> — コアの「全タブ強制ピン」はそのまま。変えたいのは (1) 状態が一目で分かる、(2) 例外操作がタブ行からできる、(3) 設定の意味が日本語でも腹落ちする、(4) 手を離さずキーボードで止められる。の 4 点。</p>
+  </div>
+
+  <h2>なぜ今 UX か</h2>
+  <div class="card">
+    <ul>
+      <li>直近作業はバグ・セキュリティ監査（F1–F6）と unpin フロー修正が中心で、品質は高い。見た目・導線の提案は未着手。</li>
+      <li>現状 popup は機能が揃っているが、ラベルが短く「手動解除を尊重」など初見で意味が取りにくい。</li>
+      <li>タブ一覧は close のみ。ピン／解除の個別操作が無く、「この 1 枚だけ外したい」時に Chrome 標準操作へ戻る。</li>
+      <li>ウィンドウ個別設定と手動解除リストは再起動で消える（仕様）。ユーザーが驚くポイントなので UI で先回りして伝える余地がある。</li>
+    </ul>
+  </div>
+
+  <h2>提案一覧（優先度）</h2>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>提案</th><th>ユーザー価値</th><th>工数感</th><th>画面</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="pri">U1</td>
+        <td><strong>ステータスヒーロー</strong> — 先頭に「このウィンドウ: ON · ピン 8/12」</td>
+        <td>開いた瞬間に効いているか分かる</td>
+        <td>小</td>
+        <td><a href="#s-02">S-02</a></td>
+      </tr>
+      <tr>
+        <td class="pri">U2</td>
+        <td><strong>タブ行の個別ピン</strong> — 行にピン／解除ボタン（close と並置）</td>
+        <td>1 タブだけ例外にしたい操作が popup 内で完結</td>
+        <td>中</td>
+        <td><a href="#s-02">S-02</a> / <a href="#s-03">S-03</a></td>
+      </tr>
+      <tr>
+        <td class="pri">U3</td>
+        <td><strong>設定の一言説明</strong> — トグル下に 1 行ヘルプ、または ? ツールチップ</td>
+        <td>「新規タブ除外」「手動解除を尊重」の誤解が減る</td>
+        <td>小</td>
+        <td><a href="#s-02">S-02</a></td>
+      </tr>
+      <tr>
+        <td class="pri">U4</td>
+        <td><strong>操作フィードバック</strong> — 全解除／全ピン後に status を 2 秒だけ結果文に</td>
+        <td>「押したのに効いてない？」不安を消す（過去 unpin バグの再発体感対策）</td>
+        <td>小</td>
+        <td><a href="#s-04">S-04</a></td>
+      </tr>
+      <tr>
+        <td class="pri">U5</td>
+        <td><strong>キーボードショートカット</strong> — このウィンドウのピン ON/OFF</td>
+        <td>popup を開かず一時停止できる</td>
+        <td>中</td>
+        <td><a href="#s-05">S-05</a></td>
+      </tr>
+      <tr>
+        <td class="pri">U6</td>
+        <td><strong>右クリックメニュー</strong> — 「このタブは再ピンしない」</td>
+        <td>タブバー上で例外登録できる</td>
+        <td>中</td>
+        <td><a href="#s-06">S-06</a></td>
+      </tr>
+      <tr>
+        <td class="pri">U7</td>
+        <td><strong>プリセット 2 つ</strong> — 「がっちり固定」／「やさしく固定」</td>
+        <td>トグル 3 つの組み合わせを一発で</td>
+        <td>中</td>
+        <td><a href="#s-02">S-02</a></td>
+      </tr>
+      <tr>
+        <td class="pri">U8</td>
+        <td><strong>タブ一覧フィルタ</strong> — タイトル／URL の絞り込み</td>
+        <td>タブが多い日でも close／例外が速い</td>
+        <td>小〜中</td>
+        <td><a href="#s-07">S-07</a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>画面リスト</h2>
+  <table class="screen-list">
+    <thead><tr><th style="width:5em">ID</th><th style="width:16em">画面名</th><th>概要</th></tr></thead>
+    <tbody>
+      <tr><td>S-01</td><td><a href="#s-01">現行 popup（比較用）</a></td><td>v0.1.2 の構造を wireframe 化したベースライン</td></tr>
+      <tr><td>S-02</td><td><a href="#s-02">改善 popup（案）</a></td><td>U1 ステータス + U3 説明 + U7 プリセット + U2 行操作</td></tr>
+      <tr><td>S-03</td><td><a href="#s-03">個別ピン／例外タブ</a></td><td>行操作後の表示状態</td></tr>
+      <tr><td>S-04</td><td><a href="#s-04">操作フィードバック</a></td><td>Unpin All 直後の status 文言</td></tr>
+      <tr><td>S-05</td><td><a href="#s-05">ショートカット案内</a></td><td>Chrome の拡張ショートカット設定への導線イメージ</td></tr>
+      <tr><td>S-06</td><td><a href="#s-06">コンテキストメニュー</a></td><td>タブ右クリックの追加項目</td></tr>
+      <tr><td>S-07</td><td><a href="#s-07">フィルタ付き一覧</a></td><td>多数タブ時の検索欄</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="s-01">S-01 現行 popup（比較用）</h2>
+  <p class="meta">構造把握用。配色・実ロゴは使わず枠とラベルのみ。</p>
+  <div class="wf wf-popup">
+    <div class="wf-frame">
+      <div class="wf-header"><span>Always Pinned</span><span class="wf-soft">260px</span></div>
+      <div class="wf-soft">このウィンドウ</div>
+      <div class="wf-row">
+        <div>このウィンドウでピン留め</div>
+        <div class="wf-switch on"></div>
+      </div>
+      <div><span class="wf-pill">既定値</span> <span class="wf-soft">× リセット（個別時のみ）</span></div>
+      <div class="wf-block">
+        <div class="wf-tab"><span class="wf-ico"></span><span class="wf-title">[タブタイトル]</span><span class="wf-action">×</span></div>
+        <div class="wf-tab"><span class="wf-ico"></span><span class="wf-title muted">[手動解除タブ]</span><span class="wf-action">×</span></div>
+        <div class="wf-tab"><span class="wf-ico"></span><span class="wf-title">[タブタイトル]</span><span class="wf-action">×</span></div>
+      </div>
+      <div class="wf-row">
+        <div class="wf-btn">▶ 全ピン留め</div>
+        <div class="wf-btn danger">✕ 全解除</div>
+      </div>
+      <div class="wf-soft">タブ: N 件 (ピン留め: M 件)</div>
+      <div class="wf-soft">既定値設定</div>
+      <div class="wf-row"><div class="wf-soft">新しいウィンドウで既定ON</div><div class="wf-switch on"></div></div>
+      <div class="wf-row"><div class="wf-soft">新規タブを除外</div><div class="wf-switch"></div></div>
+      <div class="wf-row"><div class="wf-soft">手動解除を尊重</div><div class="wf-switch"></div></div>
+      <div class="wf-hint">※ ウィンドウ設定・手動解除リストは再起動時にリセット</div>
+    </div>
+    <div class="wf-caption">現行: 状態は下部 status のみ。行操作は close のみ。設定に説明なし。</div>
+  </div>
+
+  <h2 id="s-02">S-02 改善 popup（案）</h2>
+  <p>U1 / U2 / U3 / U7 を 1 画面に載せた案。幅は 280–300px を想定（現行 260px からわずかに広げる）。</p>
+  <div class="wf wf-popup">
+    <div class="wf-frame">
+      <div class="wf-header"><span>Always Pinned</span><span class="wf-pill">この窓 ON</span></div>
+      <div class="wf-block">
+        <div class="wf-status">ピン 8 / 12</div>
+        <div class="wf-soft">手動解除 1 · 新規タブ除外 ON</div>
+      </div>
+      <div class="wf-row">
+        <div>このウィンドウでピン留め</div>
+        <div class="wf-switch on"></div>
+      </div>
+      <div><span class="wf-pill">個別設定</span> <span class="wf-soft">× 既定に戻す</span></div>
+      <div class="wf-row">
+        <div class="wf-btn">がっちり</div>
+        <div class="wf-btn">やさしく</div>
+      </div>
+      <div class="wf-soft">プリセット: がっちり=再ピン強制 / やさしく=除外+手動尊重</div>
+      <div class="wf-block">
+        <div class="wf-tab">
+          <span class="wf-ico"></span>
+          <span class="wf-title">[タブタイトル]</span>
+          <span class="wf-action" title="ピン解除">P</span>
+          <span class="wf-action">×</span>
+        </div>
+        <div class="wf-tab">
+          <span class="wf-ico"></span>
+          <span class="wf-title muted">[例外: 再ピンしない]</span>
+          <span class="wf-action" title="再ピン対象に戻す">+</span>
+          <span class="wf-action">×</span>
+        </div>
+        <div class="wf-tab">
+          <span class="wf-ico"></span>
+          <span class="wf-title">[タブタイトル]</span>
+          <span class="wf-action">P</span>
+          <span class="wf-action">×</span>
+        </div>
+      </div>
+      <div class="wf-row">
+        <div class="wf-btn">▶ 全ピン留め</div>
+        <div class="wf-btn danger">✕ 全解除</div>
+      </div>
+      <div class="wf-soft">既定値設定</div>
+      <div class="wf-row"><div>新しいウィンドウで既定ON</div><div class="wf-switch on"></div></div>
+      <div class="wf-row"><div>新規タブを除外<br><span class="wf-soft">空の新規タブは URL が付くまでピンしない</span></div><div class="wf-switch on"></div></div>
+      <div class="wf-row"><div>手動解除を尊重<br><span class="wf-soft">手で外したタブは、全ピン留めするまで戻さない</span></div><div class="wf-switch on"></div></div>
+      <div class="wf-hint">ウィンドウ個別設定と例外リストはブラウザ再起動で消えます</div>
+    </div>
+    <div class="wf-caption">案: 先頭で状態把握 → プリセット → 一覧で例外操作 → 詳細トグルは下段。</div>
+  </div>
+
+  <div class="compare">
+    <div class="card">
+      <h3>がっちり固定（プリセット）</h3>
+      <ul>
+        <li>既定 ON</li>
+        <li>新規タブ除外 OFF</li>
+        <li>手動解除を尊重 OFF</li>
+      </ul>
+      <p class="meta">「とにかく全部ピン」派。デモ・キオスク寄り。</p>
+    </div>
+    <div class="card">
+      <h3>やさしく固定（プリセット）</h3>
+      <ul>
+        <li>既定 ON</li>
+        <li>新規タブ除外 ON</li>
+        <li>手動解除を尊重 ON</li>
+      </ul>
+      <p class="meta">日常作業向け。意図的に外したタブは守る。</p>
+    </div>
+  </div>
+
+  <h2 id="s-03">S-03 個別ピン／例外タブ</h2>
+  <p>行の <strong>P</strong> でピン解除し、「手動解除を尊重」ON なら例外リストへ。表示は取り消し線＋ツールチップ（現行の manually-unpinned 表示を拡張）。</p>
+  <div class="wf wf-popup">
+    <div class="wf-frame">
+      <div class="wf-header"><span>Always Pinned</span><span class="wf-pill">この窓 ON</span></div>
+      <div class="wf-block">
+        <div class="wf-status">ピン 7 / 12</div>
+        <div class="wf-soft">手動解除 2 · いま 1 件を例外に追加した</div>
+      </div>
+      <div class="wf-block">
+        <div class="wf-tab"><span class="wf-ico"></span><span class="wf-title muted">docs — 仕様メモ</span><span class="wf-action">+</span><span class="wf-action">×</span></div>
+        <div class="wf-tab"><span class="wf-ico"></span><span class="wf-title muted">mail — 下書き</span><span class="wf-action">+</span><span class="wf-action">×</span></div>
+        <div class="wf-tab"><span class="wf-ico"></span><span class="wf-title">github — PR #12</span><span class="wf-action">P</span><span class="wf-action">×</span></div>
+      </div>
+      <div class="wf-hint">+ で再ピン対象に戻す / P で解除して例外化</div>
+    </div>
+    <div class="wf-caption">例外タブは「閉じる」だけでなく「戻す」が一覧からできる。</div>
+  </div>
+
+  <h2 id="s-04">S-04 操作フィードバック</h2>
+  <div class="two-col">
+    <div class="wf">
+      <div class="wf-frame">
+        <div class="wf-header">全解除直後</div>
+        <div class="wf-block">
+          <div class="wf-status">このウィンドウを OFF にしました</div>
+          <div class="wf-soft">ピン解除: 12 件 · 自動再ピンはしません</div>
+        </div>
+        <div class="wf-row">
+          <div class="wf-btn">▶ 全ピン留め</div>
+          <div class="wf-btn danger">✕ 全解除</div>
+        </div>
+      </div>
+      <div class="wf-caption">2〜3 秒後に通常の件数表示へ戻す。</div>
+    </div>
+    <div class="wf">
+      <div class="wf-frame">
+        <div class="wf-header">失敗時</div>
+        <div class="wf-block">
+          <div class="wf-status">操作に失敗しました</div>
+          <div class="wf-soft">もう一度お試しください（現行 statusError を維持）</div>
+        </div>
+      </div>
+      <div class="wf-caption">成功文言を足すだけで、過去の「効かない」体感を抑える。</div>
+    </div>
+  </div>
+
+  <h2 id="s-05">S-05 ショートカット案内</h2>
+  <p>Chrome の <code>chrome://extensions/shortcuts</code> で割り当てるコマンドを 1 つ追加する案。</p>
+  <div class="wf">
+    <div class="wf-frame">
+      <div class="wf-header">キーボードショートカット</div>
+      <div class="wf-block">
+        <div class="wf-row">
+          <div>このウィンドウのピン留めを切替</div>
+          <div class="wf-fixed"><span class="wf-pill">Ctrl+Shift+Y</span>（例）</div>
+        </div>
+        <div class="wf-soft">未設定時は popup 下部に「ショートカットを設定」リンクを出し、shortcuts ページを開く。</div>
+      </div>
+    </div>
+    <div class="wf-caption">popup を開かず一時停止できると、会議中・画面共有時に効く。</div>
+  </div>
+
+  <h2 id="s-06">S-06 コンテキストメニュー</h2>
+  <div class="wf" style="max-width:360px">
+    <div class="wf-frame">
+      <div class="wf-header">[タブの右クリックメニュー]</div>
+      <div class="wf-block">
+        <div>新しいタブ</div>
+        <div>タブを複製</div>
+        <div class="wf-soft">—</div>
+        <div><strong>Always Pinned: このタブは再ピンしない</strong></div>
+        <div>Always Pinned: 再ピン対象に戻す</div>
+        <div class="wf-soft">—</div>
+        <div>閉じる</div>
+      </div>
+    </div>
+    <div class="wf-caption">`contextMenus` 権限が追加になる点はストア審査・README 更新が必要。</div>
+  </div>
+
+  <h2 id="s-07">S-07 フィルタ付き一覧</h2>
+  <div class="wf wf-popup">
+    <div class="wf-frame">
+      <div class="wf-header"><span>Always Pinned</span><span class="wf-pill">この窓 ON</span></div>
+      <div class="wf-block">[検索: タイトル or URL]</div>
+      <div class="wf-soft">一致 3 / 全 28</div>
+      <div class="wf-block">
+        <div class="wf-tab"><span class="wf-ico"></span><span class="wf-title">github — issue フィルタ結果</span><span class="wf-action">P</span><span class="wf-action">×</span></div>
+        <div class="wf-tab"><span class="wf-ico"></span><span class="wf-title">github — PR フィルタ結果</span><span class="wf-action">P</span><span class="wf-action">×</span></div>
+        <div class="wf-tab"><span class="wf-ico"></span><span class="wf-title">github — Actions</span><span class="wf-action">P</span><span class="wf-action">×</span></div>
+      </div>
+    </div>
+    <div class="wf-caption">タブ 20 超の日だけ検索欄を出す、でもよい（常時表示はノイズ）。</div>
+  </div>
+
+  <h2>画面遷移図</h2>
+  <div class="flow">
+<pre style="margin:0;font-family:inherit;white-space:pre-wrap">ツールバー アイコン
+    │
+    ▼
+ S-02 改善 popup ─────────────┬──▶ S-03 行で例外化 / 戻す
+    │                         ├──▶ S-04 全ピン・全解除の結果 status
+    │                         └──▶ S-07 フィルタ（任意）
+    │
+    ├── ショートカット未設定リンク ──▶ S-05（Chrome shortcuts）
+    │
+タブバー 右クリック ──▶ S-06 コンテキストメニュー
+    │                         └──▶ 例外リスト更新 → 次回 S-02/S-03 に反映
+
+（参考）現行 S-01 は S-02 に置き換え想定。S-01 は比較用のまま残す。</pre>
+  </div>
+
+  <h2>状態一覧</h2>
+  <table>
+    <thead><tr><th>画面</th><th>状態</th><th>表示の要点</th></tr></thead>
+    <tbody>
+      <tr><td>S-02</td><td>初期（読込中）</td><td>ステータス「読み込み中…」、操作系 disabled（現行 actionDepth 踏襲）</td></tr>
+      <tr><td>S-02</td><td>この窓 ON</td><td>ヒーロー「ピン M/N」、トグル ON、一覧はピン中心</td></tr>
+      <tr><td>S-02</td><td>この窓 OFF</td><td>ヒーロー「OFF」、全解除済みでも件数は見える</td></tr>
+      <tr><td>S-02</td><td>個別設定あり</td><td>「個別設定」pill + 既定に戻す</td></tr>
+      <tr><td>S-02</td><td>既定値のみ</td><td>「既定値」pill、リセット非表示</td></tr>
+      <tr><td>S-03</td><td>例外 0 件</td><td>取り消し線行なし</td></tr>
+      <tr><td>S-03</td><td>例外あり</td><td>取り消し線 + 「+ で戻す」</td></tr>
+      <tr><td>S-04</td><td>成功フィードバック</td><td>2–3 秒だけ結果文、その後件数表示</td></tr>
+      <tr><td>S-04</td><td>失敗</td><td>statusError（現行文言）</td></tr>
+      <tr><td>S-07</td><td>空クエリ</td><td>全タブ</td></tr>
+      <tr><td>S-07</td><td>一致なし</td><td>「一致するタブなし」空状態</td></tr>
+      <tr><td>S-06</td><td>既に例外</td><td>メニューは「再ピン対象に戻す」のみ活性でも可</td></tr>
+    </tbody>
+  </table>
+
+  <h2>やらないこと（スコープ外）</h2>
+  <div class="card">
+    <ul>
+      <li>UI の全面ブランド刷新（色・フォントを Chrome Material から大きく外す）— 拡張 popup は OS/Chrome に寄せた方が違和感が少ない。</li>
+      <li>クラウド同期・アカウント・外部 API — 現状「通信なし」が売り。</li>
+      <li>ドメイン許可リストだけの別モードへの作り直し — コア価値（全タブ強制）と衝突しやすい。例外は「手動解除リスト」路線で足す。</li>
+      <li>Side Panel 常駐 — 需要はあるが権限・幅のコストが大きい。第二波以降。</li>
+    </ul>
+  </div>
+
+  <h2>実装の切り方（参考）</h2>
+  <table>
+    <thead><tr><th>波</th><th>内容</th><th>権限変更</th></tr></thead>
+    <tbody>
+      <tr><td>第 1 波（すぐ効く）</td><td>U1 ステータスヒーロー / U3 説明文 / U4 成功フィードバック</td><td>なし</td></tr>
+      <tr><td>第 2 波</td><td>U2 行の個別ピン / U8 フィルタ</td><td>なし</td></tr>
+      <tr><td>第 3 波</td><td>U5 ショートカット / U7 プリセット</td><td>commands（manifest）</td></tr>
+      <tr><td>第 4 波</td><td>U6 コンテキストメニュー</td><td>contextMenus + ストア文言</td></tr>
+    </tbody>
+  </table>
+
+  <h2>未決定事項</h2>
+  <ul class="checklist">
+    <li>popup 幅を 260 のままにするか 280–300 に広げるか</li>
+    <li>行アクションのアイコンを文字（P / +）にするか、シンプルなピン図形（絵文字なしの SVG）にするか</li>
+    <li>プリセット名「がっちり／やさしく」の英語表記（Lock tight / Soft pin 等）</li>
+    <li>ショートカットのデフォルトキーを付けるか、未設定のまま案内のみにするか</li>
+    <li>contextMenus を入れる場合の権限説明文（privacy-policy / store listing）更新タイミング</li>
+    <li>フィルタを常時表示するか、タブ数しきい値（例: 15 超）で出すか</li>
+    <li>第 1 波だけ先に出すか、U2 までまとめて次バージョンにするか</li>
+  </ul>
+
+  <p class="meta" style="margin-top:48px">生成: design-html skill · mockup モード · ハウススタイル準拠 · 元ネタ UI 提案 md なし（現行 popup + 製品 README から起草）</p>
+
+</div>
+</body>
+</html>

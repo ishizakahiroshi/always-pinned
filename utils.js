@@ -31,10 +31,14 @@ export function isNewTabUrl(url) {
 /**
  * 設定に照らし、未ピンのタブをピン留めすべきか。
  * background の pinTabsInWindow / popup のトグル ON・リセットで共通利用。
+ *
+ * manuallyUnpinned に入っているタブは、respectManualUnpin の値に関わらず除外する。
+ * （popup 行操作・コンテキストメニューで明示した例外を、強制再ピン設定でも守るため）
+ * 通常の Chrome UI 手動解除は respect ON のときだけリストへ入り、OFF のときはリストに載らない。
  */
-export function shouldAutoPinTab(tab, { skipNewTab, respectManualUnpin, manuallyUnpinned }) {
+export function shouldAutoPinTab(tab, { skipNewTab, manuallyUnpinned }) {
   if (tab == null || tab.id == null) return false;
-  if (respectManualUnpin && Array.isArray(manuallyUnpinned) && manuallyUnpinned.includes(tab.id)) {
+  if (Array.isArray(manuallyUnpinned) && manuallyUnpinned.includes(tab.id)) {
     return false;
   }
   if (skipNewTab && isNewTabUrl(tab.url || tab.pendingUrl)) {

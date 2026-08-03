@@ -22,6 +22,9 @@ Features:
 - Enable or disable per Chrome window
 - Global default setting and quick pause
 - Options for excluding new tab pages and respecting manual unpins
+- Popup status hero, presets, and per-tab keep-unpinned actions
+- Keyboard shortcut to toggle pinning for the current window
+- Tab context menu: keep unpinned / allow re-pin again
 
 Privacy:
 
@@ -34,6 +37,7 @@ Permissions:
 
 - tabs: Used to read and update tab pinned status
 - storage: Used to save extension settings
+- contextMenus: Used for tab right-click actions to keep a tab unpinned or restore re-pin
 
 ## Category Candidate
 

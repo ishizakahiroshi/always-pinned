@@ -1,5 +1,6 @@
 import {
   getSettings,
+  setWindowOverride,
   removeWindowOverride,
   addManuallyUnpinned,
   removeManuallyUnpinned,
@@ -8,6 +9,9 @@ import {
 import { isNewTabUrl, shouldAutoPinTab } from './utils.js';
 
 const LOG_PREFIX = '[Always Pinned]';
+const CMD_TOGGLE_WINDOW = 'toggle-window-pin';
+const MENU_KEEP_UNPINNED = 'keep-unpinned';
+const MENU_RESTORE_PIN = 'restore-pin';
 
 function debug(message, error) {
   console.debug(`${LOG_PREFIX} ${message}`, error);
@@ -17,6 +21,11 @@ function runAsync(label, task) {
   Promise.resolve()
     .then(task)
     .catch(error => debug(`${label} failed`, error));
+}
+
+function uiLangJa() {
+  const lang = (chrome.i18n.getUILanguage() || 'en').toLowerCase();
+  return lang.startsWith('ja');
 }
 
 async function updateTabPinned(tabId, pinned, label) {
@@ -60,29 +69,72 @@ async function pinAllWindows() {
   }));
 }
 
+async function toggleWindowPin(windowId) {
+  if (windowId == null) return;
+  const currentlyOn = await getWindowEnabled(windowId);
+  if (currentlyOn) {
+    await setWindowOverride(windowId, false);
+    const tabs = await chrome.tabs.query({ pinned: true, windowId });
+    await Promise.all(tabs.map(tab => updateTabPinned(tab.id, false, 'unpin tab via command')));
+  } else {
+    await setWindowOverride(windowId, true);
+    await pinTabsInWindow(windowId);
+  }
+  await refreshWindowBadge(windowId);
+}
+
+async function keepTabUnpinned(tabId, windowId) {
+  if (tabId == null) return;
+  // 例外リストを先に書いてから解除（respect OFF でも onUpdated が再ピンしない）
+  await addManuallyUnpinned(tabId);
+  await updateTabPinned(tabId, false, 'keep unpinned');
+  if (windowId != null) await refreshWindowBadge(windowId);
+}
+
+async function restoreTabPinTarget(tabId, windowId) {
+  if (tabId == null) return;
+  await removeManuallyUnpinned(tabId);
+  if (windowId != null && await getWindowEnabled(windowId)) {
+    await updateTabPinned(tabId, true, 'restore pin target');
+    await refreshWindowBadge(windowId);
+  }
+}
+
+async function ensureContextMenus() {
+  if (!chrome.contextMenus) return;
+  await chrome.contextMenus.removeAll();
+  const ja = uiLangJa();
+  chrome.contextMenus.create({
+    id: MENU_KEEP_UNPINNED,
+    title: ja ? 'Always Pinned: このタブは再ピンしない' : 'Always Pinned: Keep this tab unpinned',
+    contexts: ['tab']
+  });
+  chrome.contextMenus.create({
+    id: MENU_RESTORE_PIN,
+    title: ja ? 'Always Pinned: 再ピン対象に戻す' : 'Always Pinned: Allow re-pin again',
+    contexts: ['tab']
+  });
+}
+
 // --- badge ---
 
-// グローバル既定 badge（タブ個別設定が無いタブのフォールバック）
 async function updateGlobalBadge() {
   const { enabled } = await chrome.storage.local.get({ enabled: true });
   await chrome.action.setBadgeText({ text: enabled ? '' : 'OFF' });
   await chrome.action.setBadgeBackgroundColor({ color: enabled ? '#1a73e8' : '#888888' });
 }
 
-// 指定タブに、所属ウィンドウの実効状態（override 反映）を badge として表示
 async function updateBadgeForTab(tabId, windowId) {
   const isEnabled = await getWindowEnabled(windowId);
   await chrome.action.setBadgeText({ text: isEnabled ? '' : 'OFF', tabId });
   await chrome.action.setBadgeBackgroundColor({ color: isEnabled ? '#1a73e8' : '#888888', tabId });
 }
 
-// 指定ウィンドウのアクティブタブの badge を更新
 async function refreshWindowBadge(windowId) {
   const [activeTab] = await chrome.tabs.query({ active: true, windowId });
   if (activeTab) await updateBadgeForTab(activeTab.id, windowId);
 }
 
-// 現在フォーカス中のウィンドウのアクティブタブの badge を更新
 async function refreshFocusedBadge() {
   const win = await chrome.windows.getLastFocused();
   if (win && win.id != null) await refreshWindowBadge(win.id);
@@ -99,20 +151,18 @@ chrome.tabs.onCreated.addListener(tab => {
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   runAsync('tabs.onUpdated', async () => {
-    // onUpdated はイベントフィルタ非対応で全更新（favicon/title/status 等）で発火する。
-    // ピン状態と URL 変化以外は早期 return して無駄な処理を避ける。
     if (changeInfo.pinned === undefined && !changeInfo.url) return;
 
-    // ユーザーが再度ピン留めしたタブは、手動解除リストから戻す。
     if (changeInfo.pinned === true) {
       await removeManuallyUnpinned(tabId);
       return;
     }
 
-    // ユーザーが手動でピン解除した
     if (changeInfo.pinned === false) {
       if (!await getWindowEnabled(tab.windowId)) return;
-      const { respectManualUnpin } = await getSettings();
+      const { respectManualUnpin, manuallyUnpinned } = await getSettings();
+      // 明示例外（行操作・コンテキストメニュー）は respect 設定に関わらず再ピンしない
+      if (Array.isArray(manuallyUnpinned) && manuallyUnpinned.includes(tabId)) return;
       if (respectManualUnpin) {
         await addManuallyUnpinned(tabId);
       } else {
@@ -121,10 +171,9 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       return;
     }
 
-    // URL変化: 新規タブから実URLに遷移したらピン留め
     if (changeInfo.url && !tab.pinned) {
-      const { respectManualUnpin, manuallyUnpinned } = await getSettings();
-      if (respectManualUnpin && manuallyUnpinned.includes(tabId)) return;
+      const settings = await getSettings();
+      if (!shouldAutoPinTab(tab, settings)) return;
       if (!isNewTabUrl(changeInfo.url) && await getWindowEnabled(tab.windowId)) {
         await updateTabPinned(tabId, true, 'pin tab on url change');
       }
@@ -140,7 +189,6 @@ chrome.windows.onRemoved.addListener(windowId => {
   runAsync('windows.onRemoved', () => removeWindowOverride(windowId));
 });
 
-// badge: アクティブタブ / ウィンドウフォーカスの変化で実効状態を反映
 chrome.tabs.onActivated.addListener(({ tabId, windowId }) => {
   runAsync('tabs.onActivated', () => updateBadgeForTab(tabId, windowId));
 });
@@ -152,10 +200,36 @@ chrome.windows.onFocusChanged.addListener(windowId => {
   });
 });
 
+chrome.commands.onCommand.addListener(command => {
+  runAsync('commands.onCommand', async () => {
+    if (command !== CMD_TOGGLE_WINDOW) return;
+    const win = await chrome.windows.getLastFocused();
+    if (!win || win.id == null) return;
+    await toggleWindowPin(win.id);
+  });
+});
+
+if (chrome.contextMenus) {
+  chrome.contextMenus.onClicked.addListener((info, tab) => {
+    runAsync('contextMenus.onClicked', async () => {
+      const tabId = tab?.id ?? info.tabId;
+      const windowId = tab?.windowId;
+      if (tabId == null) return;
+      if (info.menuItemId === MENU_KEEP_UNPINNED) {
+        await keepTabUnpinned(tabId, windowId);
+        return;
+      }
+      if (info.menuItemId === MENU_RESTORE_PIN) {
+        await restoreTabPinTarget(tabId, windowId);
+      }
+    });
+  });
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   runAsync('runtime.onInstalled', async () => {
-    // 旧バージョンが local に残した一時キーを掃除（session へ移行済み）
     await chrome.storage.local.remove(['windowOverrides', 'manuallyUnpinned']);
+    await ensureContextMenus();
     await pinAllWindows();
     await updateGlobalBadge();
     await refreshFocusedBadge();
@@ -164,7 +238,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onStartup.addListener(() => {
   runAsync('runtime.onStartup', async () => {
-    // windowOverrides / manuallyUnpinned は session のため再起動で自動クリア済み（手動クリア不要）
+    await ensureContextMenus();
     await pinAllWindows();
     await updateGlobalBadge();
     await refreshFocusedBadge();
@@ -184,6 +258,8 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
         return;
       }
       if ('respectManualUnpin' in changes && !changes.respectManualUnpin.newValue) {
+        // respect OFF にしたときは「通常の手動解除記憶」を消す。
+        // 明示例外もクリアして強制ピンへ戻す（従来どおり）。
         await clearManuallyUnpinned();
         await pinAllWindows();
         return;
@@ -192,15 +268,13 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
         await pinAllWindows();
       }
     } else if (areaName === 'session' && 'windowOverrides' in changes) {
-      // ウィンドウ override の変更を badge へ即時反映
       await refreshFocusedBadge();
     }
   });
 });
 
-// SW 起動時（インストール直後・イベント起床・開発者リロード含む）にピン状態を再同期。
-// MV3 では SW が落ちている間に作られたタブの onCreated を取りこぼしうるため。
 runAsync('initial sync', async () => {
+  await ensureContextMenus();
   await pinAllWindows();
   await updateGlobalBadge();
   await refreshFocusedBadge();

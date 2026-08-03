@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Popup status hero (window ON/OFF and pin counts at a glance).
+- One-line help under Exclude New Tabs and Respect Manual Unpin.
+- Success feedback after Pin All / Unpin All / window toggle / presets.
+- Per-tab row actions: unpin-and-keep-free, restore re-pin target, pin.
+- Tab list filter by title or URL.
+- Lock tight / Soft pin presets for common setting combos.
+- Keyboard command `toggle-window-pin` (suggested Ctrl+Shift+Y / Cmd+Shift+Y).
+- Tab context menu: keep unpinned / allow re-pin again (`contextMenus` permission).
+
+### Changed
+
+- Explicit exception list entries are honored even when Respect Manual Unpin is off (so row/menu actions stay reliable).
+- Popup width 280px for the denser controls layout.
+
 ## [0.1.2] - 2026-05-31
 
 ### Added
