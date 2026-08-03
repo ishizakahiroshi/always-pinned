@@ -3,7 +3,7 @@
   "name": "Always Pinned",
   "version": "0.1.2",
   "description": "Keeps all tabs pinned. New tabs are pinned instantly, manual unpins are reversed, and each window has its own setting.",
-  "permissions": ["tabs", "storage"],
+  "permissions": ["tabs", "storage", "contextMenus"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -16,6 +16,15 @@
     },
     "default_popup": "popup.html",
     "default_title": "Always Pinned"
+  },
+  "commands": {
+    "toggle-window-pin": {
+      "description": "Toggle pin-all for the current window",
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      }
+    }
   },
   "icons": {
     "16": "icons/icon16.png",
