@@ -25,13 +25,14 @@ import { join } from 'node:path';
 const KB_ROOT = process.env.KB_ROOT || null;
 const FAMILY_ROOT = process.env.FAMILY_ROOT || null;
 
-// Paths exempted from scanning (substring match against the path returned by git).
+// Paths exempted from scanning (path-boundary match against the path returned by git).
+// Bare entries match exactly; trailing-slash entries match as directory prefixes.
 // These files legitimately reference watchlist patterns by design.
 const EXEMPT_PATHS = [
   'scripts/secrets-scan.mjs',
-  'scripts/secrets-scan.',
   '.husky/pre-commit',
-  '.github/workflows/secrets-scan',
+  '.githooks/pre-commit',
+  '.github/workflows/secrets-scan.yml',
   'docs/local/',
 ];
 
@@ -48,6 +49,8 @@ const ALLOWED_EMAIL_DOMAINS = [
   'users.noreply.github.com',  // GitHub の noreply
   'anthropic.com',             // AI コミット footer（Co-Authored-By）
   'example.com',               // ドキュメントの例示用
+  'example.net',               // ドキュメントの例示用（RFC 2606 予約）
+  'example.org',               // ドキュメントの例示用（RFC 2606 予約）
   // ここに各プロジェクトの公開窓口ドメインを追記する（例: 'manabi-map.app'）
 ];
 
@@ -212,7 +215,7 @@ function getStructuralPatterns() {
 
 // === File listing per mode ===
 
-function getFilesByMode(mode) {
+function getFilesByMode(mode, args) {
   try {
     switch (mode) {
       case 'staged':
@@ -221,11 +224,18 @@ function getFilesByMode(mode) {
       case 'files-from-diff':
         return execSync('git diff --name-only --diff-filter=ACM HEAD', { encoding: 'utf8' })
           .trim().split('\n').filter(Boolean);
+      case 'files-from-list':
+        if (!args.filesListPath) {
+          console.error('ERROR: --files-from-list requires a file path argument');
+          process.exit(2);
+        }
+        return readFileSync(args.filesListPath, 'utf8')
+          .split(/\r?\n/).map(s => s.trim()).filter(Boolean);
       case 'all-tracked':
         return execSync('git ls-files', { encoding: 'utf8' })
           .trim().split('\n').filter(Boolean);
       case 'packaged':
-        console.error('ERROR: --packaged mode not yet implemented (TODO: read npm pack output for layer 4)');
+        console.error('ERROR: --packaged mode not yet implemented (use --files-from-list with the staging file list)');
         process.exit(2);
       default:
         console.error(`ERROR: unknown mode: ${mode}`);
@@ -238,6 +248,22 @@ function getFilesByMode(mode) {
     }
     throw e;
   }
+}
+
+// Content readers. `staged` must scan what will actually be committed (the
+// index), NOT the working tree — otherwise editing a file after staging
+// bypasses the gate (TOCTOU). `git show :path` reads index stage 0.
+function makeReader(mode) {
+  if (mode !== 'staged') {
+    return null; // scanFile falls back to its built-in fs reader
+  }
+  return path => {
+    const out = execSync(`git show ":${path}"`, {
+      encoding: 'utf8',
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    return out;
+  };
 }
 
 // === Inline exempt directive ===
@@ -263,7 +289,14 @@ function isAllowedByDirective(line, matchedNeedle) {
 function isExempt(path) {
   // normalize separator for substring matching
   const p = path.replace(/\\/g, '/');
-  return EXEMPT_PATHS.some(ex => p.includes(ex));
+  return EXEMPT_PATHS.some(ex => {
+    const e = ex.replace(/\\/g, '/');
+    // path-boundary aware: bare entries match exactly (or as directory prefix),
+    // trailing-slash entries match as prefixes — no more substring escapes
+    // like `src/docs/local/evil.txt` slipping past `docs/local/`
+    if (e.endsWith('/')) return p.startsWith(e);
+    return p === e || p.startsWith(e + '/');
+  });
 }
 
 function isBinary(path) {
@@ -281,15 +314,47 @@ function isSkipFilename(path) {
 
 // === Scanning ===
 
-function scanFile(path, needleMap, structuralPatterns) {
-  if (!existsSync(path)) return [];
-  let stat;
-  try { stat = statSync(path); } catch { return []; }
-  if (!stat.isFile()) return [];
-  if (stat.size > MAX_FILE_SIZE) return [];
+// === Short-needle boundary rule ===
+// 2 文字以下の watchlist 名は、そのままの部分文字列一致だと乱数めいた文字列に
+// 無数に当たる（実例: YouTube の動画 ID `5vudjnGWFKc` の中の `WF` が kb のアプリ名に
+// 一致して push がブロックされた・2026-08-30）。短い needle は「前後が英数字でない」
+// ときだけ一致させる。実際の言及（`WF の設定` / `（WF）` / 行頭・行末）は引き続き当たり、
+// 検知の網は落ちない。3 文字以上は従来どおり素の部分文字列一致。
+const SHORT_NEEDLE_MAX = 2;
+const ALNUM = /[A-Za-z0-9]/;
 
+function matchesNeedle(line, needle) {
+  if (needle.length > SHORT_NEEDLE_MAX) return line.includes(needle);
+  let from = 0;
+  for (;;) {
+    const i = line.indexOf(needle, from);
+    if (i < 0) return false;
+    const before = i > 0 ? line[i - 1] : '';
+    const after = line[i + needle.length] || '';
+    if (!ALNUM.test(before) && !ALNUM.test(after)) return true;
+    from = i + 1;
+  }
+}
+
+function scanFile(path, needleMap, structuralPatterns, readContent) {
   let content;
-  try { content = readFileSync(path, 'utf8'); } catch { return []; }
+  if (readContent) {
+    // custom reader (index / list modes): fail closed on read errors
+    try {
+      content = readContent(path);
+    } catch (e) {
+      throw new Error(`cannot read content for scan: ${path} (${e.message})`);
+    }
+    if (content.length > MAX_FILE_SIZE) return [];
+  } else {
+    if (!existsSync(path)) return [];
+    let stat;
+    try { stat = statSync(path); } catch { return []; }
+    if (!stat.isFile()) return [];
+    if (stat.size > MAX_FILE_SIZE) return [];
+
+    try { content = readFileSync(path, 'utf8'); } catch { return []; }
+  }
 
   const hits = [];
   const lines = content.split('\n');
@@ -299,7 +364,7 @@ function scanFile(path, needleMap, structuralPatterns) {
 
     // watchlist needles (substring match)
     for (const [needle, source] of needleMap) {
-      if (line.includes(needle) && !isAllowedByDirective(line, needle)) {
+      if (matchesNeedle(line, needle) && !isAllowedByDirective(line, needle)) {
         hits.push({
           file: path,
           lineNumber: i + 1,
@@ -362,12 +427,14 @@ function formatHitsText(hits, mode) {
 // === Argument parsing ===
 
 function parseArgs(argv) {
-  const args = { mode: null, block: false, dryRun: false, format: 'text', help: false };
-  for (const a of argv) {
+  const args = { mode: null, filesListPath: null, block: false, dryRun: false, format: 'text', help: false };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
     if (a === '--staged') args.mode = 'staged';
     else if (a === '--files-from-diff') args.mode = 'files-from-diff';
     else if (a === '--all-tracked') args.mode = 'all-tracked';
     else if (a === '--packaged') args.mode = 'packaged';
+    else if (a === '--files-from-list') { args.mode = 'files-from-list'; args.filesListPath = argv[++i] || null; }
     else if (a === '--block') args.block = true;
     else if (a === '--dry-run') args.dryRun = true;
     else if (a === '--format=json') args.format = 'json';
@@ -383,10 +450,11 @@ function showHelp() {
 Usage: node scripts/secrets-scan.mjs <mode> [options]
 
 Modes (exactly one required):
-  --staged              scan files staged for commit (layer 2 / pre-commit hook)
+  --staged              scan the staged content in the index (layer 2 / pre-commit hook)
   --files-from-diff     scan files changed since HEAD (layer 3 / CI on PR)
   --all-tracked         scan all git-tracked files (sweep / audit)
-  --packaged            scan packaged tarball (layer 4 / release gate) [TODO]
+  --files-from-list F   scan newline-separated paths from file F (layer 4 / packaging gate)
+  --packaged            [not implemented — use --files-from-list with the staging list]
 
 Options:
   --block               exit 1 on any hit (use for enforcement)
@@ -452,12 +520,20 @@ function main() {
 
   const structuralPatterns = getStructuralPatterns();
 
-  const allFiles = getFilesByMode(args.mode);
+  const allFiles = getFilesByMode(args.mode, args);
   const filesToScan = allFiles.filter(f => !isExempt(f) && !isBinary(f) && !isSkipFilename(f));
+  const reader = makeReader(args.mode);
 
   const allHits = [];
   for (const file of filesToScan) {
-    const hits = scanFile(file, needleMap, structuralPatterns);
+    let hits;
+    try {
+      hits = scanFile(file, needleMap, structuralPatterns, reader);
+    } catch (e) {
+      // fail closed: an unreadable file must block, not silently pass
+      console.error(`ERROR: ${e.message}`);
+      process.exit(2);
+    }
     allHits.push(...hits);
   }
 
