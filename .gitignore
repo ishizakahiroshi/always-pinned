@@ -3,3 +3,6 @@ dist/
 *.old
 *.pem
 *.crx
+
+# Local video production files
+/brag-output/
