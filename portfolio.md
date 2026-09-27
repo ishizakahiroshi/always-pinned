@@ -1,4 +1,11 @@
 ---
+cover:
+  path: portfolio/overview-2026-09-28.jpg
+  alt: {ja: "always-pinned の紹介動画", en: "always-pinned overview video"}
+video:
+  provider: youtube
+  id: "KvcomW9Kafw"
+  durationSeconds: 20
 schemaVersion: 1
 color: "#2f9e6e"
 initials: "pin"
