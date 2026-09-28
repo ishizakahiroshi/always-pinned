@@ -1,9 +1,12 @@
 docs/local/
+docs/ai-audit-prompts/
 dist/
 *.old
 *.pem
 *.crx
-docs/store/
+docs/store/*
+!docs/store/listing.*.md
+!docs/store/privacy-policy.*.md
 docs/sns/
 
 # === ツール生成キャッシュ（アカウント ID 等の識別子を含み得る・追跡しない） ===
@@ -19,3 +22,54 @@ docs/sns/
 
 # docsweep: backup snapshots (30-day retention, auto-cleanup)
 .docsweep/
+# === obsidian-link: managed ===
+/docs/obsidian/
+# === /obsidian-link: managed ===
+
+# Local video source and renders
+/brag-output/
+
+# === project-init 推奨の追記（2026-09-28・templates/gitignore から不足分のみ） ===
+node_modules/
+build/
+*.zip
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*.log
+*.jsonl
+*.tmp
+*.bak
+*.orig
+*.rej
+.claude/
+.commandcode/
+.cursor/
+.codex-tmp/
+opencode.json*
+.env
+.env.*
+!.env.example
+*.local
+*.local.*
+*.local.md
+*.local.json
+scripts/local/
+*.key
+*.p12
+*.pfx
+*.ppk
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+secrets.*
+*.secret.*
+*credential*
+.netrc
+.npmrc
+.pypirc
