@@ -45,6 +45,23 @@ foreach ($file in $files) {
   Copy-Item -LiteralPath $source -Destination $target -Force
 }
 
+# Layer 4 gate: scan exactly what ships in the zip (the staging copies) before
+# archiving. Fail closed when Node.js is unavailable.
+$node = Get-Command node -ErrorAction SilentlyContinue
+if (-not $node) {
+  throw 'Node.js was not found; refusing to package without the secrets-scan gate.'
+}
+$listPath = Join-Path ([System.IO.Path]::GetTempPath()) "always-pinned-package-$PID.list"
+$files | ForEach-Object { Join-Path $root $_ } | Set-Content -LiteralPath $listPath -Encoding UTF8
+try {
+  & $node.Source (Join-Path $PSScriptRoot 'secrets-scan.mjs') '--files-from-list' $listPath '--block'
+  if ($LASTEXITCODE -ne 0) {
+    throw "secrets-scan blocked packaging (exit code $LASTEXITCODE)"
+  }
+} finally {
+  Remove-Item -LiteralPath $listPath -Force -ErrorAction SilentlyContinue
+}
+
 if (Test-Path -LiteralPath $zipPath) {
   Remove-Item -LiteralPath $zipPath -Force
 }
@@ -52,5 +69,8 @@ if (Test-Path -LiteralPath $zipPath) {
 Compress-Archive -Path (Join-Path $stagingDir '*') -DestinationPath $zipPath -CompressionLevel Optimal
 
 $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath).Hash.ToLowerInvariant()
+$sumsPath = Join-Path $distDir "SHA256SUMS-v$version.txt"
+Set-Content -LiteralPath $sumsPath -Value "$hash  $(Split-Path -Leaf $zipPath)" -Encoding ASCII
 Write-Host "Created: $zipPath"
 Write-Host "SHA256:  $hash"
+Write-Host "Sums:    $sumsPath"

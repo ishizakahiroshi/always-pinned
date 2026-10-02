@@ -19,6 +19,17 @@ All notable changes to this project will be documented in this file.
 
 - Explicit exception list entries are honored even when Respect Manual Unpin is off (so row/menu actions stay reliable).
 - Popup width 280px for the denser controls layout.
+- `package-webstore.ps1` now writes `SHA256SUMS-v<version>.txt` next to the zip and runs the secrets-scan gate on the exact staging files before archiving (fail closed without Node.js).
+
+### Fixed
+
+- Corrected privacy wording across README / store listing / privacy policy: the extension sends no data itself, but Chrome loads tab favicon images while the popup is open. Also clarified `chrome.storage.local` vs `session` usage.
+- Added `minimum_chrome_version: 102` (required by `chrome.storage.session`).
+- Pinned CI actions by SHA, added least-privilege `permissions: contents: read`, widened push scan coverage to all branches, dropped unneeded full fetch.
+- Hardened secrets-scan: staged mode now scans index content (`git show :path`) instead of the working tree, exempt paths match on path boundaries instead of substrings, and a new `--files-from-list` mode supports packaging gates.
+- Tightened `validate-extension.ps1`: fails closed when Node.js is missing (opt-out via `-SkipNodeCheck`), and structurally requires `favIconUrl` to be used only through `getSafeFaviconUrl()`.
+- Clarified in `storage.js` that the RMW lock serializes per context only.
+- Added project `CLAUDE.md`; replaced "coming soon" store note with the live link; fixed stale promo-video path in this changelog; resolved `docs/store/` ignore-vs-tracked contradiction.
 
 ## [0.1.2] - 2026-05-31
 
@@ -42,7 +53,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Added promo video at `docs/always-pinned.mp4`.
+- Added promo video (hosted on GitHub user attachments: https://github.com/user-attachments/assets/b6619107-b977-49e8-82bd-612b725b2118).
 - Added English/Japanese UI localization in the popup based on browser language.
 - Added `docs/release-notes-v0.1.1.md`.
 

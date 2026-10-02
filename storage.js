@@ -7,7 +7,9 @@
 //
 // windowOverrides / manuallyUnpinned の Read-Modify-Write は
 // モジュールスコープの Promise チェーン (withSessionLock) で直列化し、
-// 並行更新による lost update を防ぐ。
+// 同一 context 内での並行更新による lost update を防ぐ。
+// 注意: 直列化は context 単位（popup と service worker で鎖は共有されない）。
+// popup ↔ service worker を跨ぐ同時 RMW はここでは防げない。
 
 const PERSISTENT_DEFAULTS = {
   enabled: true,

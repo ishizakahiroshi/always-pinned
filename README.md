@@ -39,7 +39,8 @@ https://github.com/user-attachments/assets/b6619107-b977-49e8-82bd-612b725b2118
 
 ## Installation
 
-> Chrome Web Store listing coming soon.
+> Available on the [Chrome Web Store](https://chromewebstore.google.com/detail/always-pinned/cpgbmadjjabkmdapeknmnpfmknbncdie).
+> Note: the published listing may lag behind this repository until the next release is submitted.
 
 ### Load unpacked (developer mode)
 
@@ -82,7 +83,7 @@ Click the 📌 icon in the toolbar to open the popup.
 | `storage` | Persist the enabled / disabled setting |
 | `contextMenus` | Tab context-menu actions for exceptions |
 
-No data leaves your browser. No external connections are made.
+No data leaves your browser through this extension (no analytics, telemetry, or data collection). One note: while the popup is open, Chrome loads the site favicons shown in the tab list directly from each site (standard image requests, with the referrer not sent). Tab titles and URLs are used for local display only and are never transmitted by the extension.
 
 ---
 

@@ -28,9 +28,9 @@ Features:
 
 Privacy:
 
-- No external network requests
-- No personal data collection
-- No browsing history or page content is transmitted
+- The extension itself makes no external network requests (no analytics, telemetry, or data collection)
+- While the popup is open, Chrome loads the tab favicons shown in the list directly from each site
+- No personal data collection; no browsing history or page content is transmitted
 - Settings are stored locally in Chrome storage
 
 Permissions:

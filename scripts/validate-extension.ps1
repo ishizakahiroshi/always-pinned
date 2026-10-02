@@ -1,3 +1,7 @@
+param(
+  [switch]$SkipNodeCheck
+)
+
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -68,7 +72,11 @@ function Test-JavaScriptSyntax {
 
   $node = Get-Command node -ErrorAction SilentlyContinue
   if (-not $node) {
-    Write-Warning 'Node.js was not found; skipping JavaScript syntax checks.'
+    if ($SkipNodeCheck) {
+      Write-Warning 'Node.js was not found; JavaScript syntax checks skipped (-SkipNodeCheck).'
+      return
+    }
+    Add-ValidationError 'Node.js was not found. Install Node.js, or pass -SkipNodeCheck to explicitly skip JS syntax checks.'
     return
   }
 
@@ -203,8 +211,20 @@ $combinedJavaScript = $javascriptSources -join "`n"
 if ($combinedJavaScript -match 'TRUSTED_AND_UNTRUSTED_CONTEXTS') {
   Add-ValidationError 'chrome.storage.session must not be exposed to untrusted contexts.'
 }
-if ($combinedJavaScript -cmatch '(?s)\.src\s*=\s*[^;]*\.favIconUrl') {
-  Add-ValidationError 'popup favicon rendering must sanitize tab favIconUrl before assigning img.src.'
+
+# favIconUrl は getSafeFaviconUrl() の定義内と、その外でちょうど 1 回（呼び出し側）だけ
+# 現れること。sanitizer を迂回した直接利用を構造的に排除する。
+# 正規表現 gate の限界（複雑な変数フローは追えない）はあるが、「定義外で触ったら即
+# エラー」は機械的に判定できる。残課題: AST/lint 導入（docs/ai-audit-prompts report A-7）。
+$popupSource = $javascriptSources[1]
+$sanitizerMatch = [regex]::Match($popupSource, '(?s)function\s+getSafeFaviconUrl\b.*?\r?\n\}')
+if (-not $sanitizerMatch.Success) {
+  Add-ValidationError 'popup.js must define getSafeFaviconUrl() and route tab favicons through it.'
+} else {
+  $outsideCount = [regex]::Matches($popupSource.Remove($sanitizerMatch.Index, $sanitizerMatch.Length), 'favIconUrl').Count
+  if ($outsideCount -ne 1) {
+    Add-ValidationError "tab favIconUrl must only be used via getSafeFaviconUrl() (found $outsideCount usage(s) outside the sanitizer)"
+  }
 }
 
 $changelog = Get-Content -Raw -LiteralPath (Join-Path $root 'CHANGELOG.md')
