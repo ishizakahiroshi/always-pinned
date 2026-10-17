@@ -239,7 +239,7 @@ function getFilesByMode(mode, args) {
   try {
     switch (mode) {
       case 'staged':
-        return gitList(['diff', '--cached', '--name-only', '--diff-filter=ACM']);
+        return gitList(['diff', '--cached', '--name-only', '--diff-filter=ACMRT']);
       case 'files-from-diff':
         return gitList(['diff', '--name-only', '--diff-filter=ACM', 'HEAD']);
       case 'files-from-list':
