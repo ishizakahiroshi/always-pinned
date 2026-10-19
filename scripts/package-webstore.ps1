@@ -52,9 +52,9 @@ if (-not $node) {
   throw 'Node.js was not found; refusing to package without the secrets-scan gate.'
 }
 $listPath = Join-Path ([System.IO.Path]::GetTempPath()) "always-pinned-package-$PID.list"
-$files | ForEach-Object { Join-Path $stagingDir $_ } | Set-Content -LiteralPath $listPath -Encoding UTF8
+$files | ForEach-Object { Join-Path $root $_ } | Set-Content -LiteralPath $listPath -Encoding UTF8
 try {
-  & $node.Source (Join-Path $PSScriptRoot 'secrets-scan.dual.mjs') '--path-from' $listPath
+  & $node.Source (Join-Path $PSScriptRoot 'secrets-scan.mjs') '--files-from-list' $listPath '--block'
   if ($LASTEXITCODE -ne 0) {
     throw "secrets-scan blocked packaging (exit code $LASTEXITCODE)"
   }
