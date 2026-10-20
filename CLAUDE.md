@@ -14,8 +14,8 @@ background.js        service worker（ピン留め制御・イベント処理）
 storage.js           chrome.storage 集約ヘルパ（session RMW の直列化）
 utils.js             共有純粋ヘルパ（新規タブ判定・ピン適格判定）
 popup.html / popup.js  ポップアップ UI
-scripts/             validate / package / secrets-scan / SNS 投稿補助
-.githooks/           pre-commit（secrets-scan layer 2）
+scripts/             validate / package / doxguard 実行アダプタ(secrets-scan.dual/staged) / SNS 投稿補助
+.githooks/           pre-commit（layer 2・doxguard opt-in）
 .github/workflows/   secrets-scan.yml（layer 3・CI バックストップ）
 docs/store/          ストア掲載文・プライバシーポリシー（md のみ追跡）
 docs/local/          ローカル作業用（gitignore・コミットしない）
@@ -32,14 +32,14 @@ dist/                成果物出力先（gitignore・コミットしない）
 
 ## secrets-scan（このリポジトリの配線）
 
-scanner 本体: `scripts/secrets-scan.mjs`（kb 由来 watchlist + 構造 regex）。完全 Coverage には環境変数 `KB_ROOT` / `FAMILY_ROOT` が必要（未設定時は構造 regex のみで動作）。
+scanner 本体: doxguard（`scripts/secrets-scan.dual.mjs --native-only` 経由で実行。CI は gitleaks も併用）。private watchlist は `DOXGUARD_CONFIG` で参照する（CI は構造パターンのみ）。
 
 | 層 | 経路 | コマンド |
 |---|---|---|
-| layer 2 | pre-commit | `node scripts/secrets-scan.mjs --staged --block`（`.githooks/pre-commit`） |
+| layer 2 | pre-commit | doxguard opt-in（`.githooks/pre-commit`）／手動は `node scripts/secrets-scan.dual.mjs --native-only --staged` |
 | layer 2 導入 | hooks 登録 | `pwsh scripts/install-hooks.ps1` または `bash scripts/install-hooks.sh` |
-| layer 3 | CI push/PR | `.github/workflows/secrets-scan.yml` → `--all-tracked --block` |
-| 手動 sweep | 全 tracked | `node scripts/secrets-scan.mjs --all-tracked --dry-run` |
+| layer 3 | CI push/PR | `.github/workflows/secrets-scan.yml` → `secrets-scan.dual.mjs --native-only --all-tracked` |
+| 手動 sweep | 全 tracked | `node scripts/secrets-scan.dual.mjs --native-only --all-tracked` |
 
 行単位の免除が必要な場合は `secrets-scan: allow` ディレクティブを使う（乱用禁止・review で確認）。
 
