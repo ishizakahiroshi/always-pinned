@@ -54,7 +54,7 @@ if (-not $node) {
 $listPath = Join-Path ([System.IO.Path]::GetTempPath()) "always-pinned-package-$PID.list"
 $files | ForEach-Object { Join-Path $root $_ } | Set-Content -LiteralPath $listPath -Encoding UTF8
 try {
-  & $node.Source (Join-Path $PSScriptRoot 'secrets-scan.mjs') '--files-from-list' $listPath '--block'
+  & $node.Source (Join-Path $PSScriptRoot 'secrets-scan.dual.mjs') '--native-only' '--files-from-list' $listPath
   if ($LASTEXITCODE -ne 0) {
     throw "secrets-scan blocked packaging (exit code $LASTEXITCODE)"
   }
